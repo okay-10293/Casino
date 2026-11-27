@@ -16,8 +16,8 @@ let fails = 0; const check = (n, c) => { console.log(c ? 'OK  ' : 'FAIL', n); if
   check('일하는 화면으로 전환', !q('[data-stage]').hidden && q('[data-list]').hidden);
   for (let i = 0; i < 20; i++) q('[data-tap]').click();
   q('[data-quit]').click();
-  check('전단지 20장 → +160', bal() === start + 160);
-  check('결과 메시지', /160/.test(q('[data-result]').textContent));
+  check('전단지 20장 → +800', bal() === start + 800);
+  check('결과 메시지', /800/.test(q('[data-result]').textContent));
 
   // 한 번에 한 일만
   q('[data-job=flyer]').click(); q('[data-job=sort]').click();
@@ -37,7 +37,7 @@ let fails = 0; const check = (n, c) => { console.log(c ? 'OK  ' : 'FAIL', n); if
   await sleep(700);
   check('잠깐 뒤 풀림', !q('[data-d="0"]').disabled);
   q('[data-quit]').click();
-  check('택배 3개 → +150', bal() === before + 150);
+  check('택배 3개 → +750', bal() === before + 750);
 
   // 청소: 중간에 그만두면 0
   const b2 = bal(); q('[data-job=clean]').click(); q('[data-quit]').click();
@@ -46,13 +46,13 @@ let fails = 0; const check = (n, c) => { console.log(c ? 'OK  ' : 'FAIL', n); if
   // 전단지 끝까지(10초): 자동 종료 + 지급
   const b3 = bal(); q('[data-job=flyer]').click(); for (let i = 0; i < 50; i++) q('[data-tap]').click();
   await sleep(10500);
-  check('전단지 10초 자동 종료 → +400', bal() === b3 + 400 && !q('[data-list]').hidden);
+  check('전단지 10초 자동 종료 → +2,000', bal() === b3 + 2000 && !q('[data-list]').hidden);
 
   // 청소 끝까지(20초)
   const b4 = bal(); q('[data-job=clean]').click();
   await sleep(20500);
-  check('청소 20초 → +300', bal() === b4 + 300);
-  check('총 번 돈 표시', q('[data-earned]').textContent === (160 + 150 + 400 + 300).toLocaleString('ko-KR'));
+  check('청소 20초 → +1,500', bal() === b4 + 1500);
+  check('총 번 돈 표시', q('[data-earned]').textContent === (800 + 750 + 2000 + 1500).toLocaleString('ko-KR'));
   check('페이지 오류 없음', !errs.length); if (errs.length) console.log(errs);
   process.exit(fails ? 1 : 0);
 })();

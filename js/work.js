@@ -8,9 +8,9 @@
 
   var JOBS = [
     {
-      id: 'flyer', icon: '📄', name: '전단지 돌리기', secs: 10, label: '최대 800',
-      desc: '10초 동안 버튼을 최대한 많이 눌러. 한 번에 8원.',
-      pay: function (s) { return Math.min(800, s.n * 8); },
+      id: 'flyer', icon: '📄', name: '전단지 돌리기', secs: 10, label: '최대 4,000',
+      desc: '10초 동안 버튼을 최대한 많이 눌러. 한 번에 40원.',
+      pay: function (s) { return Math.min(4000, s.n * 40); },
       build: function (s, body) {
         body.innerHTML =
           '<button type="button" class="primary work-big" data-tap>전단지 주기 📄</button>' +
@@ -23,9 +23,9 @@
       }
     },
     {
-      id: 'sort', icon: '📦', name: '택배 분류', secs: 15, label: '최대 1,500',
-      desc: '상자에 적힌 지역 버튼을 눌러 분류해. 맞힐 때마다 50원, 틀리면 잠깐 멈춰.',
-      pay: function (s) { return Math.min(1500, s.n * 50); },
+      id: 'sort', icon: '📦', name: '택배 분류', secs: 15, label: '최대 7,500',
+      desc: '상자에 적힌 지역 버튼을 눌러 분류해. 맞힐 때마다 250원, 틀리면 잠깐 멈춰.',
+      pay: function (s) { return Math.min(7500, s.n * 250); },
       build: function (s, body) {
         body.innerHTML =
           '<div class="parcel">📦<b data-dest></b></div>' +
@@ -50,9 +50,9 @@
       }
     },
     {
-      id: 'clean', icon: '🧹', name: '청소', secs: 20, label: '300',
+      id: 'clean', icon: '🧹', name: '청소', secs: 20, label: '1,500',
       desc: '가만히 기다리면 끝나. 대신 보수가 적어. 끝까지 해야 받아.',
-      pay: function (s, finished) { return finished ? 300 : 0; },
+      pay: function (s, finished) { return finished ? 1500 : 0; },
       build: function (s, body) {
         body.innerHTML = '<div class="parcel">🧹<b>바닥을 닦는 중…</b></div>';
       }
