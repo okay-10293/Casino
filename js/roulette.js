@@ -63,7 +63,8 @@
   var q = function (s) { return root.querySelector(s); };
   var ballEl = q('[data-ball]'), msgEl = q('[data-msg]'), histEl = q('[data-history]'), totalEl = q('[data-total]');
   var spinBtn = q('[data-spin]');
-  var chip = CHIPS[0], bets = {}, stack = [], last = null, spinning = false, hist = [];
+  var chip = CHIPS[0], bets = {}, stack = [], last = null, spinning = false, skipNow = false, hist = [];
+  spinBtn.parentNode.parentNode.appendChild(C.skipBox());
 
   function total() { return Object.keys(bets).reduce(function (s, k) { return s + bets[k]; }, 0); }
   function paint() {
@@ -74,7 +75,8 @@
       el.classList.toggle('has', !!v);
     });
     totalEl.textContent = C.fmt(total());
-    spinBtn.disabled = spinning || total() === 0;
+    spinBtn.disabled = !spinning && total() === 0;
+    spinBtn.textContent = spinning ? '건너뛰기' : '스핀';
   }
   function place(key, amt) {
     if (spinning) return;
@@ -126,11 +128,12 @@
   }
 
   async function spin() {
-    if (spinning || total() === 0) return;
-    spinning = true; paint(); msgEl.classList.remove('win');
+    if (spinning) { skipNow = true; return; }   // 도는 중에 다시 누르면 건너뛰기
+    if (total() === 0) return;
+    spinning = true; skipNow = false; paint(); msgEl.classList.remove('win');
     msgEl.textContent = '돌아간다…';
     var result = C.rand(37);
-    for (var i = 0; i < 26; i++) {
+    for (var i = 0; i < 26 && !skipNow && !C.skipMotion(); i++) {
       setBall(C.rand(37));
       await C.sleep(55 + i * i * 0.5);
     }

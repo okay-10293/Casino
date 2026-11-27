@@ -41,33 +41,41 @@
   var reelEls = root.querySelectorAll('[data-r]');
   var msgEl = q('[data-msg]'), pull = q('[data-pull]');
   var bar = C.betBar(q('[data-bar]'), { min: 100 });
-  var busy = false;
+  var busy = false, stopNow = null;
+  pull.parentNode.parentNode.appendChild(C.skipBox());
+  function showResult(result) {
+    reelEls.forEach(function (r, i) { r.textContent = result[i].s; r.classList.remove('spin'); });
+  }
 
   async function spin() {
-    if (busy) return;
+    if (busy) { if (stopNow) stopNow(); return; }   // 도는 중에 다시 누르면 건너뛰기
     var b = bar.value;
     if (b < bar.min) return C.toast('최소 베팅은 ' + bar.min);
     if (b > C.money()) return C.toast('게임머니가 부족해');
-    busy = true; pull.disabled = true; bar.lock(true);
+    busy = true; pull.textContent = '건너뛰기'; bar.lock(true);
     msgEl.classList.remove('win'); msgEl.textContent = '돌아간다…';
     C.add(-b);
     var result = [pick(), pick(), pick()];
-    var stopAt = [700, 1150, 1600], t0 = Date.now();
-    await new Promise(function (resolve) {
-      var timer = setInterval(function () {
-        var el = Date.now() - t0, done = 0;
-        reelEls.forEach(function (r, i) {
-          if (el >= stopAt[i]) { r.textContent = result[i].s; r.classList.remove('spin'); done++; }
-          else { r.textContent = SYMS[C.rand(SYMS.length)].s; r.classList.add('spin'); }
-        });
-        if (done === 3) { clearInterval(timer); resolve(); }
-      }, 70);
-    });
+    if (C.skipMotion()) showResult(result);
+    else {
+      var stopAt = [700, 1150, 1600], t0 = Date.now();
+      await new Promise(function (resolve) {
+        var timer = setInterval(function () {
+          var el = Date.now() - t0, done = 0;
+          reelEls.forEach(function (r, i) {
+            if (el >= stopAt[i]) { r.textContent = result[i].s; r.classList.remove('spin'); done++; }
+            else { r.textContent = SYMS[C.rand(SYMS.length)].s; r.classList.add('spin'); }
+          });
+          if (done === 3) { clearInterval(timer); stopNow = null; resolve(); }
+        }, 70);
+        stopNow = function () { clearInterval(timer); stopNow = null; showResult(result); resolve(); };
+      });
+    }
     var mult = payout(result), pay = Math.floor(b * mult);
     if (pay) C.add(pay);
     msgEl.textContent = pay ? (mult >= 30 ? '잭팟! ' : '당첨! ') + '+' + C.fmt(pay - b) + ' (x' + mult + ')' : '꽝, -' + C.fmt(b);
     msgEl.classList.toggle('win', pay > 0);
-    busy = false; pull.disabled = false; bar.lock(false);
+    busy = false; pull.textContent = '스핀'; bar.lock(false);
     if (C.money() < bar.min) C.toast('게임머니가 바닥났어. 노동 탭에서 벌거나 위의 리셋을 눌러줘');
   }
   pull.addEventListener('click', spin);
