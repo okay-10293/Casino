@@ -213,3 +213,8 @@ select, .join-row input { background: var(--bg); color: var(--fg); border: 1px s
 .pcombo { color: var(--brass); font-weight: 700; font-size: 13px; margin-top: 2px; }
 .rank-table tr.cur { background: #d4a64a26; }
 .rank-table tr.cur .rn b { color: var(--brass); }
+
+/* 더블탭 확대 방지 (핀치 확대와 스크롤은 그대로) */
+html, body, * { touch-action: manipulation; }
+button, .tabs, .card, .betbar, .actions { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+input, textarea { -webkit-user-select: text; user-select: text; }
