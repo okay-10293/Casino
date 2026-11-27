@@ -139,6 +139,14 @@ button.ghost { background: transparent; color: var(--muted); min-height: 36px; p
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); background: var(--brass); color: var(--brass-ink); padding: 10px 16px; border-radius: 999px; font-weight: 700; opacity: 0; pointer-events: none; transition: .2s; max-width: calc(100vw - 32px); text-align: center; z-index: 20; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+button small { display: block; font-size: 11px; font-weight: 400; opacity: .7; line-height: 1.1; }
+.howto { margin: 20px 0 0; text-align: center; color: var(--muted); font-size: 13px; }
+.howto b { color: var(--brass); }
+.help { margin-top: 10px; color: var(--muted); font-size: 14px; }
+.help summary { cursor: pointer; color: var(--fg); padding: 6px 0; }
+.help ul { margin: 6px 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+.steps { margin: 0; padding-left: 1.4em; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+.steps b { color: var(--fg); }
 /* 온라인 */
 .field { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 13px; }
 select, .join-row input { background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font: inherit; min-height: 44px; }

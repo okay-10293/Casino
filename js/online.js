@@ -11,12 +11,13 @@
   root.innerHTML =
     '<div data-lobby class="lobby panel">' +
     '<h2>온라인 홀덤</h2>' +
-    '<p>방을 만들고 코드를 친구한테 보내면 같이 할 수 있어. 2~6명, 블라인드 10/20.</p>' +
+    '<p>친구들이랑 같이 하는 홀덤이야. 2~6명이 칠 수 있어.</p>' +
+    '<ol class="steps"><li><b>방 만들기</b>를 눌러 코드를 받아</li><li>코드나 초대 링크를 친구한테 보내</li><li>친구는 같은 주소로 들어와서 <b>코드를 넣고 입장</b></li></ol>' +
     '<label class="field">바이인<select id="on-buyin"></select></label>' +
     '<div class="actions"><button type="button" class="primary" data-create>방 만들기</button></div>' +
     '<div class="join-row"><input id="on-code" maxlength="4" placeholder="방 코드 4자리" autocomplete="off" autocapitalize="characters">' +
     '<button type="button" data-join>입장</button></div>' +
-    '<p class="rule" data-status></p></div>' +
+    '<p class="rule" data-status></p><div data-help></div></div>' +
     '<div data-table hidden>' +
     '<div class="room-bar"><span>방 코드 <b data-code></b></span><button type="button" data-copy class="ghost">초대 링크 복사</button></div>' +
     '<div class="felt poker-felt">' +
@@ -27,6 +28,7 @@
     '<ul class="log" data-log></ul></div>';
 
   var q = function (s) { return root.querySelector(s); };
+  q('[data-help]').appendChild(C.holdemHelp());
   var lobbyEl = q('[data-lobby]'), tableEl = q('[data-table]'), statusEl = q('[data-status]');
   var topEl = q('[data-top]'), meEl = q('[data-me]'), boardEl = q('[data-board]'), potEl = q('[data-pot]');
   var msgEl = q('[data-msg]'), ctrlEl = q('[data-ctrl]'), logEl = q('[data-log]');
@@ -322,8 +324,8 @@
       };
       ctrlEl.innerHTML =
         '<div class="actions"><button type="button" data-a="fold">폴드</button>' +
-        '<button type="button" class="primary" data-a="call">' + (toCall === 0 ? '체크' : '콜 ' + C.fmt(toCall)) + '</button>' +
-        (canRaise ? '<button type="button" class="primary" data-a="raise">' + (snap.currentBet === 0 ? '베팅' : '레이즈') + ' <b data-rv>' + C.fmt(minTo) + '</b></button>' : '') + '</div>' +
+        '<button type="button" class="primary" data-a="call">' + (toCall === 0 ? '넘기기<small>체크</small>' : '맞추기 ' + C.fmt(toCall) + '<small>콜</small>') + '</button>' +
+        (canRaise ? '<button type="button" class="primary" data-a="raise">' + (snap.currentBet === 0 ? '베팅하기' : '올리기<small>레이즈</small>') + ' <b data-rv>' + C.fmt(minTo) + '</b></button>' : '') + '</div>' +
         (canRaise ? '<div class="raise-row"><input type="range" id="on-raise" min="' + minTo + '" max="' + maxTo + '" step="10" value="' + minTo + '">' +
           '<div class="presets"><button type="button" data-set="' + minTo + '">최소</button><button type="button" data-set="' + sized(0.5) + '">1/2 팟</button>' +
           '<button type="button" data-set="' + sized(1) + '">팟</button><button type="button" data-set="' + maxTo + '">올인</button></div></div>' : '');

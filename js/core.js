@@ -168,6 +168,18 @@
     onChange: function (f) { listeners.push(f); },
     rand: rand, sleep: sleep, fmt: fmt, fmtShort: fmtShort, toast: toast,
     betBar: betBar,
+    holdemHelp: function () {
+      var d = document.createElement('details'); d.className = 'help';
+      d.innerHTML = '<summary>홀덤이 처음이면</summary><ul>' +
+        '<li>내 카드 2장 + 가운데 공용 카드 5장 중 <b>제일 센 5장 조합</b>으로 겨뤄.</li>' +
+        '<li>순서: 처음 2장 → 플랍(3장) → 턴(1장) → 리버(1장). 카드가 깔릴 때마다 베팅해.</li>' +
+        '<li><b>포기(폴드)</b>: 이번 판을 포기해. 낸 칩은 돌려받지 못해.</li>' +
+        '<li><b>넘기기(체크)</b>: 올리는 사람이 없을 때 칩 안 내고 넘겨.</li>' +
+        '<li><b>맞추기(콜)</b>: 상대가 건 만큼 나도 내.</li>' +
+        '<li><b>올리기(레이즈)</b>: 판돈을 더 키워. 올인은 가진 칩 전부.</li>' +
+        '<li>족보(약→강): 하이카드 &lt; 원페어 &lt; 투페어 &lt; 트리플 &lt; 스트레이트 &lt; 플러시 &lt; 풀하우스 &lt; 포카드 &lt; 스트레이트 플러시</li></ul>';
+      return d;
+    },
     Cards: { shuffled: shuffled, el: cardEl, rankLabel: rankLabel, SUITS: SUITS }
   };
 })();

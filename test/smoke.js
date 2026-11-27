@@ -20,7 +20,7 @@ const srv = http.createServer((req, res) => {
   await pg.click('[data-tab=blackjack]');
   await pg.click('#g-blackjack [data-add="1000"]'); await pg.click('#g-blackjack [data-deal]');
   await pg.waitForTimeout(200);
-  if (await pg.isEnabled('#g-blackjack [data-stand]')) { await pg.click('#g-blackjack [data-stand]'); await pg.waitForFunction(() => !document.querySelector('#g-blackjack [data-deal]').disabled, null, { timeout: 15000 }); }
+  if (await pg.isEnabled('#g-blackjack [data-stand]')) { await pg.click('#g-blackjack [data-stand]'); await pg.waitForFunction(() => !/골라줘/.test(document.querySelector('#g-blackjack [data-msg]').textContent), null, { timeout: 15000 }); }
   console.log('blackjack:', await pg.textContent('#g-blackjack [data-msg]'), await bal());
 
   // 룰렛
@@ -40,7 +40,7 @@ const srv = http.createServer((req, res) => {
   await pg.click('#g-holdem .buyins button >> nth=1');
   console.log('holdem buy-in →', await bal());
   for (let hand = 0; hand < 3; hand++) {
-    for (let guard = 0; guard < 80; guard++) {
+    for (let guard = 0; guard < 300; guard++) {
       const next = await pg.$('#g-holdem [data-end=next]');
       if (next) break;
       const call = await pg.$('#g-holdem [data-a=call]');

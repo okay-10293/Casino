@@ -12,8 +12,9 @@
   root.innerHTML =
     '<div data-lobby class="lobby panel">' +
     '<h2>텍사스 홀덤</h2>' +
-    '<p>봇 3명과 한 테이블. 블라인드 ' + SB + '/' + BB + ', 노리밋.<br>바이인 금액만 테이블로 가져가고, 일어나면 남은 칩이 돌아와.</p>' +
-    '<div class="buyins" data-buyins></div></div>' +
+    '<p>혼자 연습하는 판이야. 봇 3명과 한 테이블, 블라인드(강제 베팅) ' + SB + '/' + BB + '.<br>친구랑 하려면 위의 <b>친구랑 홀덤</b> 탭을 써줘.</p>' +
+    '<p>바이인(테이블로 가져가는 칩)만 쓰고, 일어나면 남은 칩이 지갑으로 돌아와.</p>' +
+    '<div class="buyins" data-buyins></div><div data-help></div></div>' +
     '<div data-table hidden>' +
     '<div class="felt poker-felt">' +
     '<div class="seats-top" data-top></div>' +
@@ -26,6 +27,7 @@
     '</div>';
 
   var q = function (s) { return root.querySelector(s); };
+  q('[data-help]').appendChild(C.holdemHelp());
   var lobbyEl = q('[data-lobby]'), tableEl = q('[data-table]');
   var topEl = q('[data-top]'), meEl = q('[data-me]'), boardEl = q('[data-board]');
   var potEl = q('[data-pot]'), msgEl = q('[data-msg]'), ctrlEl = q('[data-ctrl]'), logEl = q('[data-log]');
@@ -219,9 +221,9 @@
     }
     ctrlEl.innerHTML =
       '<div class="actions">' +
-      '<button type="button" data-a="fold">폴드</button>' +
-      '<button type="button" class="primary" data-a="call">' + (toCall === 0 ? '체크' : '콜 ' + C.fmt(toCall)) + '</button>' +
-      (canRaise ? '<button type="button" data-a="raise" class="primary">' + (currentBet === 0 ? '베팅' : '레이즈') + ' <b data-rv>' + C.fmt(minTo) + '</b></button>' : '') +
+      '<button type="button" data-a="fold">포기<small>폴드</small></button>' +
+      '<button type="button" class="primary" data-a="call">' + (toCall === 0 ? '넘기기<small>체크</small>' : '맞추기 ' + C.fmt(toCall) + '<small>콜</small>') + '</button>' +
+      (canRaise ? '<button type="button" data-a="raise" class="primary">' + (currentBet === 0 ? '베팅하기' : '올리기<small>레이즈</small>') + ' <b data-rv>' + C.fmt(minTo) + '</b></button>' : '') +
       '</div>' +
       (canRaise ? '<div class="raise-row"><input type="range" id="raise-range" min="' + minTo + '" max="' + maxTo + '" step="10" value="' + minTo + '">' +
         '<div class="presets"><button type="button" data-set="' + minTo + '">최소</button>' +
