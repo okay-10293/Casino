@@ -192,6 +192,10 @@
         pushState(true);
         var seat = engine._seats().filter(function (s) { return s.id === m.id; })[0];
         if (seat && seat.hand.length && !seat.folded) send({ t: 'hand', to: m.id, cards: seat.hand, no: engine.snapshot().handNo });
+      } else if (m.t === 'needhand') {
+        // 손님이 이번 핸드 패를 못 받았다고 다시 요청 (브로드캐스트는 유실될 수 있다)
+        var ns = engine._seats().filter(function (s) { return s.id === m.id; })[0];
+        if (ns && ns.hand.length && !ns.folded) send({ t: 'hand', to: m.id, cards: ns.hand, no: engine.snapshot().handNo });
       } else if (m.t === 'action') {
         engine.action(String(m.id), m.a);
       } else if (m.t === 'leave') {
@@ -292,9 +296,17 @@
     tick();
   }
 
+  var lastNeedHand = 0;
   function tick() {
     var el = root.querySelector('[data-timer]');
     if (el && snap && snap.toAct) el.textContent = Math.max(0, Math.ceil((localDeadline - Date.now()) / 1000)) + '초';
+    // 손님: 이번 핸드 내 패가 아직 없으면 방장에게 다시 달라고 한다 (1초마다)
+    if (role === 'guest' && snap && snap.phase === 'hand' && Date.now() - lastNeedHand > 1000) {
+      var me2 = snap.seats.filter(function (x) { return x.id === me.id; })[0];
+      if (me2 && me2.inHand && !me2.folded && (myHandNo !== snap.handNo || !myHand.length)) {
+        lastNeedHand = Date.now(); send({ t: 'needhand', id: me.id });
+      }
+    }
   }
 
   function renderControls(mine) {

@@ -18,7 +18,7 @@
           subscribe: function (cb) { setTimeout(function () { bc.postMessage({ kind: 'pq' }); cb('SUBSCRIBED'); }, 20); return ch; },
           track: function (meta) { myMeta = meta; presence[key] = [meta]; bc.postMessage({ kind: 'pj', key: key, meta: meta }); fire('presence', 'sync'); return Promise.resolve(); },
           presenceState: function () { return presence; },
-          send: function (m) { bc.postMessage({ kind: 'bc', event: m.event, payload: JSON.parse(JSON.stringify(m.payload)) }); return Promise.resolve('ok'); },
+          send: function (m) { if (window.__dropHand > 0 && m.payload && m.payload.t === 'hand') { window.__dropHand--; return Promise.resolve('ok'); } bc.postMessage({ kind: 'bc', event: m.event, payload: JSON.parse(JSON.stringify(m.payload)) }); return Promise.resolve('ok'); },
           _close: function () { if (myMeta) bc.postMessage({ kind: 'pl', key: key }); alive = false; bc.close(); }
         };
         return ch;
