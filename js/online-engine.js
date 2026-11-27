@@ -25,7 +25,7 @@
       return {
         phase: phase, handNo: handNo, board: board.slice(), pot: pot(), currentBet: currentBet, minRaise: minRaise,
         toAct: toAct, deadline: deadline, msg: msg, logs: logs.slice(), dealer: dealerSeat ? dealerSeat.id : null,
-        sb: SB, bb: BB,
+        sb: SB, bb: BB, game: 'holdem',
         seats: seats.map(function (s) {
           return {
             id: s.id, name: s.name, stack: s.stack, bet: s.bet, folded: s.folded, allin: s.allin,
@@ -193,7 +193,7 @@
       currentBet = BB; minRaise = BB;
       hand.forEach(function (p) {
         p.hand = [deck.pop(), deck.pop()];
-        if (opt.onPrivate) opt.onPrivate(p.id, p.hand.slice());
+        if (opt.onPrivate) opt.onPrivate(p.id, p.hand.slice(), handNo);
       });
       msg = '새 핸드 #' + handNo;
       say(hand[sb].name + ' SB ' + SB + ', ' + hand[bb].name + ' BB ' + BB);
@@ -234,6 +234,10 @@
     return {
       addPlayer: addPlayer, removePlayer: removePlayer, rebuy: rebuy, action: action,
       snapshot: snapshot, kick: kick,
+      privateFor: function (id) {
+        var s = find(id);
+        return (s && s.inHand && !s.folded && s.hand.length && phase === 'hand') ? { cards: s.hand.slice(), handNo: handNo } : null;
+      },
       stop: function () { stopped = true; if (finishAct) finishAct({ type: 'fold' }); },
       _seats: function () { return seats; }
     };

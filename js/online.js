@@ -10,19 +10,20 @@
 
   root.innerHTML =
     '<div data-lobby class="lobby panel">' +
-    '<h2>온라인 홀덤</h2>' +
-    '<p>친구들이랑 같이 하는 홀덤이야. 2~6명이 칠 수 있어.</p>' +
+    '<h2>친구랑 같이 하기</h2>' +
+    '<p>친구들이랑 같이 하는 방이야. 2~6명이 들어올 수 있어.</p>' +
     '<ol class="steps"><li><b>방 만들기</b>를 눌러 코드를 받아</li><li>코드나 초대 링크를 친구한테 보내</li><li>친구는 같은 주소로 들어와서 <b>코드를 넣고 입장</b></li></ol>' +
+    '<label class="field">게임 (방 만들 때)<select id="on-game"><option value="holdem">텍사스 홀덤</option><option value="blackjack">블랙잭 (딜러 vs 친구들)</option></select></label>' +
     '<label class="field">바이인<select id="on-buyin"></select></label>' +
     '<div class="actions"><button type="button" class="primary" data-create>방 만들기</button></div>' +
     '<div class="join-row"><input id="on-code" maxlength="4" placeholder="방 코드 4자리" autocomplete="off" autocapitalize="characters">' +
     '<button type="button" data-join>입장</button></div>' +
     '<p class="rule" data-status></p><div data-help></div></div>' +
     '<div data-table hidden>' +
-    '<div class="room-bar"><span>방 코드 <b data-code></b></span><button type="button" data-copy class="ghost">초대 링크 복사</button></div>' +
+    '<div class="room-bar"><span><span data-gamename></span> · 방 코드 <b data-code></b></span><button type="button" data-copy class="ghost">초대 링크 복사</button></div>' +
     '<div class="felt poker-felt">' +
     '<div class="seats-top" data-top></div>' +
-    '<div class="board-area"><div class="pot">팟 <b data-pot>0</b></div><div class="board" data-board></div><div class="msg" data-msg></div></div>' +
+    '<div class="board-area"><div class="pot"><span data-potlabel>팟</span> <b data-pot>0</b></div><div class="board" data-board></div><div class="msg" data-msg></div></div>' +
     '<div class="seat-me" data-me></div></div>' +
     '<div class="panel hctrl" data-ctrl></div>' +
     '<ul class="log" data-log></ul></div>';
@@ -32,7 +33,7 @@
   var lobbyEl = q('[data-lobby]'), tableEl = q('[data-table]'), statusEl = q('[data-status]');
   var topEl = q('[data-top]'), meEl = q('[data-me]'), boardEl = q('[data-board]'), potEl = q('[data-pot]');
   var msgEl = q('[data-msg]'), ctrlEl = q('[data-ctrl]'), logEl = q('[data-log]');
-  var buyinSel = q('#on-buyin'), codeInput = q('#on-code');
+  var buyinSel = q('#on-buyin'), codeInput = q('#on-code'), gameSel = q('#on-game');
   BUYINS.forEach(function (v) {
     var o = document.createElement('option'); o.value = v; o.textContent = C.fmt(v); buyinSel.appendChild(o);
   });
@@ -45,7 +46,9 @@
   }
 
   var channel = null, role = null, code = '', me = null, engine = null;
-  var snap = null, myHand = [], localDeadline = 0, hostKey = null, busy = false;
+  var snap = null, myHand = [], myHandNo = 0, lastHello = 0, localDeadline = 0, hostKey = null, busy = false;
+  var roomGame = 'holdem', hostGame = null, bjBet = 0, lastBjBet = 0;
+  var GAME_NAMES = { holdem: '텍사스 홀덤', blackjack: '블랙잭' };
   var sendTimer = null, pendingState = null, ctrlKey = '', clock = null;
 
   function setStatus(t) { statusEl.textContent = t || ''; }
@@ -57,7 +60,7 @@
   function hostFromPresence() {
     var st = channel.presenceState(), found = null;
     Object.keys(st).forEach(function (k) {
-      (st[k] || []).forEach(function (m) { if (m && m.host) found = k; });
+      (st[k] || []).forEach(function (m) { if (m && m.host) { found = k; hostGame = m.game || 'holdem'; } });
     });
     return found;
   }
@@ -81,7 +84,7 @@
       });
     });
     if (!ok) { await sb.removeChannel(ch); channel = null; return 'error'; }
-    await ch.track({ name: me.name, host: asRole === 'host' });
+    await ch.track({ name: me.name, host: asRole === 'host', game: roomGame });
     for (var i = 0; i < 12; i++) {           // 프레즌스 동기화를 최대 3초 기다림
       await wait(250);
       hostKey = hostFromPresence();
@@ -110,6 +113,7 @@
   async function createRoom() {
     if (busy) return; var buyin = readBuyin(); if (!buyin) return;
     busy = true; setStatus('방을 만드는 중…'); prepareMe();
+    roomGame = gameSel.value === 'blackjack' ? 'blackjack' : 'holdem';
     var result = 'error';
     for (var i = 0; i < 4; i++) {
       code = genCode(); result = await connect(code, 'host');
@@ -117,11 +121,12 @@
     }
     if (result !== 'ok') { busy = false; return setStatus('방을 만들지 못했어. 잠시 뒤 다시 해봐.'); }
     role = 'host';
-    engine = OnlineEngine.createEngine({
+    var factory = roomGame === 'blackjack' ? OnlineBlackjack : OnlineEngine;
+    engine = factory.createEngine({
       shuffled: C.Cards.shuffled,
       onState: function (s) { onEngineState(s); },
-      onPrivate: function (id, cards) {
-        if (id === me.id) { myHand = cards; render(); } else send({ t: 'hand', to: id, cards: cards });
+      onPrivate: function (id, cards, handNo) {
+        if (id === me.id) { myHand = cards; myHandNo = handNo; render(); } else send({ t: 'hand', to: id, cards: cards, handNo: handNo });
       }
     });
     C.add(-buyin); C.setTable(buyin);
@@ -137,7 +142,7 @@
     var result = await connect(code, 'guest');
     if (result === 'nohost') { busy = false; return setStatus('그 코드의 방이 없어.'); }
     if (result !== 'ok') { busy = false; return setStatus('연결하지 못했어. 잠시 뒤 다시 해봐.'); }
-    role = 'guest';
+    role = 'guest'; roomGame = hostGame || 'holdem';
     var ack = await new Promise(function (resolve) {
       var t = setTimeout(function () { joinWaiter = null; resolve(null); }, 6000);
       joinWaiter = function (a) { clearTimeout(t); joinWaiter = null; resolve(a); };
@@ -155,6 +160,9 @@
   function enterTable() {
     setStatus(''); lobbyEl.hidden = true; tableEl.hidden = false;
     q('[data-code]').textContent = code;
+    q('[data-gamename]').textContent = GAME_NAMES[roomGame];
+    q('[data-potlabel]').textContent = roomGame === 'blackjack' ? '딜러' : '팟';
+    bjBet = 0;
     clearInterval(clock); clock = setInterval(tick, 500);
     if (role === 'guest') send({ t: 'hello', id: me.id });
     render();
@@ -176,7 +184,7 @@
     if (stack > 0) C.add(stack);
     C.setTable(0);
     if (refund !== false) C.toast(stack > 0 ? C.fmt(stack) + ' 칩을 지갑으로 가져왔어' : '방에서 나왔어');
-    engine = null; snap = null; myHand = []; ctrlKey = '';
+    engine = null; snap = null; myHand = []; myHandNo = 0; lastHello = 0; ctrlKey = '';
     lobbyEl.hidden = false; tableEl.hidden = true; busy = false; setStatus('');
   }
 
@@ -194,8 +202,8 @@
         pushState(true);
       } else if (m.t === 'hello') {
         pushState(true);
-        var seat = engine._seats().filter(function (s) { return s.id === m.id; })[0];
-        if (seat && seat.hand.length && !seat.folded) send({ t: 'hand', to: m.id, cards: seat.hand });
+        var priv = engine.privateFor(String(m.id));
+        if (priv) send({ t: 'hand', to: m.id, cards: priv.cards, handNo: priv.handNo });
       } else if (m.t === 'action') {
         engine.action(String(m.id), m.a);
       } else if (m.t === 'leave') {
@@ -216,7 +224,7 @@
       } else if (m.t === 'state' && role === 'guest') {
         applyState(m.s);
       } else if (m.t === 'hand' && m.to === me.id) {
-        myHand = m.cards || []; render();
+        myHand = m.cards || []; myHandNo = Number(m.handNo) || 0; render();
       } else if (m.t === 'bye' && role === 'guest') {
         hostGone();
       }
@@ -226,24 +234,27 @@
   /* 상태 전파 (너무 자주 보내지 않게 합친다) */
   function onEngineState(s) {
     if (!role || !channel) return;
-    s.turnLeft = s.toAct ? Math.max(0, s.deadline - Date.now()) : 0;
+    s.turnLeft = (s.toAct || s.phase === 'betting') ? Math.max(0, s.deadline - Date.now()) : 0;
     applyState(s);
     pendingState = s;
     if (!sendTimer) sendTimer = setTimeout(function () { sendTimer = null; if (pendingState) { send({ t: 'state', s: pendingState }); pendingState = null; } }, 70);
   }
   function pushState(force) {
     if (!engine) return;
-    var s = engine.snapshot(); s.turnLeft = s.toAct ? Math.max(0, s.deadline - Date.now()) : 0;
+    var s = engine.snapshot(); s.turnLeft = (s.toAct || s.phase === 'betting') ? Math.max(0, s.deadline - Date.now()) : 0;
     pendingState = s;
     if (force) { clearTimeout(sendTimer); sendTimer = null; send({ t: 'state', s: s }); pendingState = null; }
   }
   function applyState(s) {
     if (!role) return;
-    var prevHand = snap ? snap.handNo : 0;
     snap = s; localDeadline = Date.now() + (s.turnLeft || 0);
-    if (s.handNo !== prevHand && s.phase === 'hand' && role === 'guest') myHand = [];
     var mine = s.seats.filter(function (x) { return x.id === me.id; })[0];
     if (mine) C.setTable(mine.stack);
+    // 패 메시지를 놓쳤으면 방장에게 다시 요청 (핸드당 한 번)
+    if (role === 'guest' && s.game === 'holdem' && s.phase === 'hand' && mine && mine.inHand && mine.hasCards && !mine.folded &&
+        myHandNo !== s.handNo && lastHello !== s.handNo) {
+      lastHello = s.handNo; send({ t: 'hello', id: me.id });
+    }
     render();
   }
 
@@ -264,7 +275,7 @@
     d.appendChild(head);
     var st = document.createElement('div'); st.className = 'pstack'; st.textContent = C.fmt(s.stack); d.appendChild(st);
     var cards = document.createElement('div'); cards.className = 'hand small';
-    if (isMe && myHand.length && s.inHand) myHand.forEach(function (c) { cards.appendChild(C.Cards.el(c)); });
+    if (isMe && myHand.length && myHandNo === snap.handNo && s.inHand && !s.folded) myHand.forEach(function (c) { cards.appendChild(C.Cards.el(c)); });
     else if (s.hand) s.hand.forEach(function (c) { cards.appendChild(C.Cards.el(c)); });
     else if (s.hasCards && s.inHand) { cards.appendChild(C.Cards.el(null, true)); cards.appendChild(C.Cards.el(null, true)); }
     d.appendChild(cards);
@@ -281,6 +292,7 @@
 
   function render() {
     if (!snap || tableEl.hidden) return;
+    if (snap.game === 'blackjack') return renderBJ();
     topEl.innerHTML = ''; meEl.innerHTML = '';
     var mine = null;
     snap.seats.forEach(function (s) {
@@ -298,9 +310,122 @@
     tick();
   }
 
+  /* ---------- 블랙잭 화면 ---------- */
+  var STATE_TEXT = { bj: '블랙잭!', bust: '21 초과', stood: '멈춤', playing: '', bet: '베팅 완료', idle: '', out: '' };
+  function bjSeatEl(s, isMe) {
+    var d = document.createElement('div');
+    d.className = 'pseat' + (snap.toAct === s.id ? ' acting' : '') + (isMe ? ' me' : '') + (s.left ? ' folded' : '');
+    var head = document.createElement('div'); head.className = 'ph';
+    var nm = document.createElement('span'); nm.className = 'pn'; nm.textContent = s.name + (isMe ? ' (나)' : '');
+    head.appendChild(nm); d.appendChild(head);
+    var st = document.createElement('div'); st.className = 'pstack'; st.textContent = C.fmt(s.stack); d.appendChild(st);
+    var cards = document.createElement('div'); cards.className = 'hand small';
+    s.cards.forEach(function (c) { cards.appendChild(C.Cards.el(c)); });
+    d.appendChild(cards);
+    var note = document.createElement('div'); note.className = 'pnote';
+    var t = [];
+    if (s.cards.length) t.push('합 ' + s.total);
+    if (s.bet) t.push('베팅 ' + C.fmt(s.bet));
+    if (s.left) t.push('나감'); else if (STATE_TEXT[s.state]) t.push(STATE_TEXT[s.state]);
+    note.textContent = t.join(' · ');
+    if (s.result && snap.phase === 'between') { note.textContent = s.result; note.classList.add('res'); }
+    if (snap.toAct === s.id) { var tm = document.createElement('span'); tm.className = 'timer'; tm.setAttribute('data-timer', ''); note.appendChild(document.createTextNode(' ')); note.appendChild(tm); }
+    d.appendChild(note);
+    return d;
+  }
+  function renderBJ() {
+    topEl.innerHTML = ''; meEl.innerHTML = '';
+    var mine = null;
+    snap.seats.forEach(function (s) {
+      if (s.id === me.id) { mine = s; meEl.appendChild(bjSeatEl(s, true)); } else topEl.appendChild(bjSeatEl(s, false));
+    });
+    boardEl.innerHTML = '';
+    if (snap.dealer.cards.length) snap.dealer.cards.forEach(function (c) { boardEl.appendChild(C.Cards.el(c, !c)); });
+    else for (var i = 0; i < 2; i++) boardEl.appendChild(Object.assign(document.createElement('div'), { className: 'card slot' }));
+    potEl.textContent = snap.dealer.cards.length ? snap.dealer.total : '-';
+    msgEl.textContent = snap.msg;
+    if (snap.phase === 'betting') {
+      var tm = document.createElement('span'); tm.className = 'timer'; tm.setAttribute('data-timer', '');
+      msgEl.appendChild(document.createTextNode(' ')); msgEl.appendChild(tm);
+    }
+    logEl.innerHTML = '';
+    snap.logs.slice().reverse().forEach(function (t) { var li = document.createElement('li'); li.textContent = t; logEl.appendChild(li); });
+    renderBJControls(mine);
+    tick();
+  }
+  function leaveButton(mine) {
+    var lv = document.createElement('button'); lv.type = 'button';
+    lv.textContent = role === 'host' ? '방 닫고 나가기' : '나가기 (' + C.fmt(mine.stack) + ')';
+    lv.addEventListener('click', function () { leaveRoom(true); });
+    return lv;
+  }
+  function renderBJControls(mine) {
+    if (!mine) { ctrlEl.innerHTML = ''; return; }
+    var key = [snap.round, snap.phase, snap.toAct, mine.stack, mine.bet, mine.state, mine.cards.length].join('|');
+    if (key === ctrlKey) return;
+    ctrlKey = key; ctrlEl.innerHTML = ''; ctrlEl.onclick = null;
+    var minBet = snap.minBet;
+    var inPlay = mine.inRound && (snap.phase === 'playing' || snap.phase === 'dealer');
+
+    if (snap.phase === 'betting' && mine.state === 'idle') {
+      bjBet = Math.max(minBet, Math.min(lastBjBet || minBet, mine.stack));
+      ctrlEl.innerHTML =
+        '<div class="bet-line"><span>이번 판 베팅</span><b data-bv>' + C.fmt(bjBet) + '</b></div>' +
+        '<div class="chips">' + [100, 500, 1000, 5000].map(function (v) {
+          return '<button type="button" class="chip c' + v + '" data-add="' + v + '">+' + C.fmtShort(v) + '</button>';
+        }).join('') + '</div>' +
+        '<div class="actions"><button type="button" class="primary" data-ok>베팅하기</button>' +
+        '<button type="button" data-clr>최소로</button><button type="button" data-all>올인</button></div>';
+      var bv = ctrlEl.querySelector('[data-bv]');
+      var setBet = function (v) { bjBet = Math.max(minBet, Math.min(Math.floor(v / 100) * 100, mine.stack)); bv.textContent = C.fmt(bjBet); };
+      ctrlEl.onclick = function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        if (b.dataset.add) setBet(bjBet + Number(b.dataset.add));
+        else if (b.hasAttribute('data-clr')) setBet(minBet);
+        else if (b.hasAttribute('data-all')) setBet(mine.stack);
+        else if (b.hasAttribute('data-ok')) { lastBjBet = bjBet; act({ type: 'bet', amount: bjBet }); }
+      };
+      return;
+    }
+    if (snap.toAct === me.id) {
+      var canDouble = mine.cards.length === 2 && mine.stack >= mine.bet;
+      ctrlEl.innerHTML = '<div class="actions">' +
+        '<button type="button" class="primary" data-a="hit">카드 받기<small>히트</small></button>' +
+        '<button type="button" data-a="stand">멈추기<small>스탠드</small></button>' +
+        '<button type="button" data-a="double"' + (canDouble ? '' : ' disabled') + '>2배로 한 장<small>더블</small></button></div>';
+      ctrlEl.onclick = function (e) {
+        var b = e.target.closest('button'); if (!b || !b.dataset.a) return;
+        act({ type: b.dataset.a });
+      };
+      return;
+    }
+    var busted = mine.stack < minBet && !inPlay;
+    var info = document.createElement('p'); info.className = 'rule';
+    info.textContent = busted ? '칩이 부족해. 리바이하면 다음 판부터 다시 참여해.'
+      : snap.phase === 'betting' ? (mine.state === 'bet' ? '다른 사람 베팅을 기다리는 중이야.' : '이번 판은 쉬어.')
+      : snap.phase === 'waiting' ? '친구를 기다리는 중이야. 코드 ' + code + ' 를 알려줘.'
+      : snap.phase === 'between' ? '곧 다음 판 베팅이 시작돼.'
+      : (snap.toAct ? '다른 사람 차례야.' : '진행 중…');
+    ctrlEl.appendChild(info);
+    var row = document.createElement('div'); row.className = 'actions';
+    if (busted) {
+      [1000, 2000, 5000].forEach(function (v) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'primary';
+        b.textContent = C.fmt(v) + ' 리바이'; b.disabled = C.money() < v;
+        b.addEventListener('click', function () {
+          if (role === 'host') { var r = engine.rebuy(me.id, v); if (r.ok) C.add(-v); else C.toast(r.reason); }
+          else send({ t: 'rebuy', id: me.id, amount: v });
+        });
+        row.appendChild(b);
+      });
+    }
+    row.appendChild(leaveButton(mine));
+    ctrlEl.appendChild(row);
+  }
+
   function tick() {
     var el = root.querySelector('[data-timer]');
-    if (el && snap && snap.toAct) el.textContent = Math.max(0, Math.ceil((localDeadline - Date.now()) / 1000)) + '초';
+    if (el && snap && (snap.toAct || snap.phase === 'betting')) el.textContent = Math.max(0, Math.ceil((localDeadline - Date.now()) / 1000)) + '초';
   }
 
   function renderControls(mine) {
