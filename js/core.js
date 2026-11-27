@@ -3,9 +3,10 @@
   'use strict';
   var KEY = 'okay-casino-v1';
   var START = 10000;
-  var S = { name: '플레이어', money: START, table: 0, peak: START };
+  var S = { id: '', name: '플레이어', money: START, table: 0, peak: START };
   try {
     var saved = JSON.parse(localStorage.getItem(KEY));
+    if (saved && typeof saved.id === 'string' && /^[0-9a-f-]{36}$/.test(saved.id)) S.id = saved.id;
     if (saved && typeof saved.money === 'number') {
       S.name = typeof saved.name === 'string' ? saved.name.slice(0, 10) : S.name;
       S.money = Math.max(0, Math.floor(saved.money));
@@ -13,6 +14,7 @@
       S.peak = Math.max(S.money, saved.peak || 0);
     }
   } catch (e) {}
+  if (!S.id) S.id = (crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, function (c) { return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16); }));
   // 홀덤 테이블에서 탭을 닫았으면 테이블 칩을 지갑으로 돌려준다
   if (S.table > 0) { S.money += S.table; S.table = 0; }
 
@@ -110,7 +112,7 @@
   }
 
   /* ---------- 시작/탭 ---------- */
-  var games = ['blackjack', 'holdem', 'roulette', 'slots'];
+  var games = ['blackjack', 'holdem', 'roulette', 'slots', 'online', 'ranking'];
   function show(tab) {
     if (games.indexOf(tab) < 0) tab = 'blackjack';
     games.forEach(function (g) { document.getElementById('g-' + g).hidden = g !== tab; });
@@ -118,6 +120,7 @@
       b.classList.toggle('on', b.dataset.tab === tab);
     });
     if (location.hash !== '#' + tab) history.replaceState(null, '', '#' + tab);
+    document.dispatchEvent(new CustomEvent('casino:tab', { detail: tab }));
   }
 
   function start() {
@@ -161,6 +164,7 @@
     },
     setTable: function (n) { S.table = Math.max(0, Math.floor(n)); save(); },
     playerName: function () { return S.name; },
+    playerId: function () { return S.id; },
     onChange: function (f) { listeners.push(f); },
     rand: rand, sleep: sleep, fmt: fmt, fmtShort: fmtShort, toast: toast,
     betBar: betBar,
