@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>오케이 카지노</title>
 <meta name="description" content="게임머니로 즐기는 친구용 카지노. 블랙잭, 텍사스 홀덤(온라인 지원), 룰렛, 슬롯.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -56,6 +56,25 @@
 <script src="js/online.js?v=6"></script>
 <script src="js/work.js?v=6"></script>
 <script src="js/leaderboard.js?v=6"></script>
-<script>Casino.start();</script>
+<script>
+// 더블탭 확대 방지 (iOS Safari는 touch-action/viewport만으로 안 막히는 경우가 있음)
+(function () {
+  var lastTouch = 0;
+  document.addEventListener('touchend', function (e) {
+    var now = Date.now();
+    if (now - lastTouch <= 300) e.preventDefault(); // 300ms 안에 두 번째 탭이면 확대 차단
+    lastTouch = now;
+  }, { passive: false });
+  // iOS 핀치/제스처 확대 차단
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (t) {
+    document.addEventListener(t, function (e) { e.preventDefault(); });
+  });
+  // 데스크톱 더블클릭 시 텍스트 선택 방지 (입력창 제외)
+  document.addEventListener('dblclick', function (e) {
+    if (!/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) e.preventDefault();
+  });
+})();
+Casino.start();
+</script>
 </body>
 </html>
