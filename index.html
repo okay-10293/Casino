@@ -57,19 +57,13 @@
 <script src="js/work.js?v=6"></script>
 <script src="js/leaderboard.js?v=6"></script>
 <script>
-// 더블탭 확대 방지 (iOS Safari는 touch-action/viewport만으로 안 막히는 경우가 있음)
+// 확대 방지: 더블탭은 CSS touch-action: manipulation 이 담당 (JS로 막으면 빠른 연타가 씹힘)
 (function () {
-  var lastTouch = 0;
-  document.addEventListener('touchend', function (e) {
-    var now = Date.now();
-    if (now - lastTouch <= 300) e.preventDefault(); // 300ms 안에 두 번째 탭이면 확대 차단
-    lastTouch = now;
-  }, { passive: false });
   // iOS 핀치/제스처 확대 차단
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (t) {
     document.addEventListener(t, function (e) { e.preventDefault(); });
   });
-  // 데스크톱 더블클릭 시 텍스트 선택 방지 (입력창 제외)
+  // 데스크톱 더블클릭 시 텍스트 선택 방지 (입력창 제외, 클릭 이벤트는 그대로 동작)
   document.addEventListener('dblclick', function (e) {
     if (!/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) e.preventDefault();
   });
