@@ -59,7 +59,7 @@
     });
     if (C.money() < BUYINS[0]) {
       var p = document.createElement('p'); p.className = 'rule';
-      p.textContent = '바이인은 최소 ' + C.fmt(BUYINS[0]) + '부터야. 노동 탭에서 일해서 벌 수 있어.';
+      p.textContent = '바이인은 최소 ' + C.fmt(BUYINS[0]) + '부터야. 노동 탭에서 벌거나 위의 리셋으로 다시 시작할 수 있어.';
       el.appendChild(p);
     }
   }
@@ -342,5 +342,9 @@
     };
   }
 
+  document.addEventListener('casino:reset', function () {
+    if (seats.length) { location.reload(); return; } // 진행 중인 테이블 상태를 깔끔하게 버린다
+    renderLobby();
+  });
   document.addEventListener('casino:init', renderLobby);
 })();

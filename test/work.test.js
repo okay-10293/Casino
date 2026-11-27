@@ -1,4 +1,4 @@
-// node test/work.test.js — 노동 탭: 일하면 돈이 들어오고, 리셋 버튼은 없다. 약 35초 걸림. (npm i --no-save jsdom)
+// node test/work.test.js — 노동 탭: 일하면 돈이 들어오고, 리셋은 1만원으로 되돌린다. 약 35초 걸림. (npm i --no-save jsdom)
 const { openPage } = require('./jsdom-page');
 const errs = [];
 const dom = openPage('#work', errs);
@@ -7,7 +7,7 @@ const bal = () => Number(d.querySelector('#balance').textContent.replace(/,/g, '
 const q = s => d.querySelector(s);
 let fails = 0; const check = (n, c) => { console.log(c ? 'OK  ' : 'FAIL', n); if (!c) fails++; };
 (async () => {
-  check('리셋 버튼 없음', !q('#reset-btn'));
+  check('리셋 버튼 있음', !!q('#reset-btn'));
   check('노동 탭 보임', !q('#g-work').hidden && q('#tabs [data-tab=work]').classList.contains('on'));
   const start = bal(); check('시작 잔액 10,000', start === 10000);
 
@@ -53,6 +53,9 @@ let fails = 0; const check = (n, c) => { console.log(c ? 'OK  ' : 'FAIL', n); if
   await sleep(20500);
   check('청소 20초 → +1,500', bal() === b4 + 1500);
   check('총 번 돈 표시', q('[data-earned]').textContent === (800 + 750 + 2000 + 1500).toLocaleString('ko-KR'));
+  // 리셋: 한 번은 확인만, 두 번째에 1만원으로
+  q('#reset-btn').click(); check('리셋 한 번은 확인만', bal() !== 10000 && q('#reset-btn').textContent === '한 번 더');
+  q('#reset-btn').click(); check('리셋 두 번 → 10,000', bal() === 10000);
   check('페이지 오류 없음', !errs.length); if (errs.length) console.log(errs);
   process.exit(fails ? 1 : 0);
 })();

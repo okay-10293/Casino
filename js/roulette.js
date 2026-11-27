@@ -147,9 +147,10 @@
     hist.push(result); renderHist();
     last = bets; bets = {}; stack = [];
     spinning = false; paint();
-    if (C.money() < 100) C.toast('게임머니가 바닥났어. 노동 탭에서 벌어봐');
+    if (C.money() < 100) C.toast('게임머니가 바닥났어. 노동 탭에서 벌거나 위의 리셋을 눌러줘');
   }
   spinBtn.addEventListener('click', spin);
+  document.addEventListener('casino:reset', function () { if (!spinning) { bets = {}; stack = []; paint(); } });
   setBall(0); ballEl.textContent = '–'; ballEl.className = 'ball';
   paint();
 })();

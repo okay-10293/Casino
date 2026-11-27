@@ -112,7 +112,7 @@
     msgEl.textContent = text;
     msgEl.classList.toggle('win', pay > bet);
     phase = 'bet'; setButtons();
-    if (C.money() < bar.min) C.toast('게임머니가 바닥났어. 노동 탭에서 벌어봐');
+    if (C.money() < bar.min) C.toast('게임머니가 바닥났어. 노동 탭에서 벌거나 위의 리셋을 눌러줘');
   }
 
   btn.deal.addEventListener('click', function () { msgEl.classList.remove('win'); deal(); });

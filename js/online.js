@@ -102,7 +102,7 @@
   /* ---------- 방 만들기 / 입장 ---------- */
   function readBuyin() {
     var v = Number(buyinSel.value);
-    if (C.money() < v) { setStatus('게임머니가 부족해. 바이인을 낮추거나 노동 탭에서 벌어와.'); return 0; }
+    if (C.money() < v) { setStatus('게임머니가 부족해. 바이인을 낮추거나 노동 탭에서 벌어와. 리셋도 돼.'); return 0; }
     return v;
   }
   function prepareMe() { me = { id: C.playerId(), name: C.playerName() }; }
@@ -374,6 +374,7 @@
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, function () { C.toast('방 코드: ' + code); });
     else C.toast('방 코드: ' + code);
   });
+  document.addEventListener('casino:reset', function () { if (role) location.reload(); });
   window.addEventListener('beforeunload', function () { if (role === 'host' && channel) { try { send({ t: 'bye' }); } catch (e) {} } });
 
   // 초대 링크(?room=ABCD)로 들어오면 온라인 탭을 열고 코드를 채운다
