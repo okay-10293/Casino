@@ -1,4 +1,4 @@
-/* 블랙잭: 딜러 17에서 스탠드, 블랙잭 3:2, 더블 가능 */
+/* 블랙잭: 딜러 17에서 스탠드, 블랙잭 3:2, 더블 가능, 동점은 딜러 승 (딜러 승률 약 56~59%) */
 (function () {
   'use strict';
   var C = Casino;
@@ -21,7 +21,8 @@
     '<li><b>카드 받기</b>: 한 장 더 받아.</li><li><b>멈추기</b>: 더 안 받고 딜러 차례로 넘겨.</li>' +
     '<li><b>2배로 한 장</b>: 베팅을 두 배로 올리고, 딱 한 장만 받고 끝내. 첫 두 장일 때만 돼.</li>' +
     '<li>J, Q, K는 10, A는 1 또는 11. 처음 두 장이 21이면 <b>블랙잭</b>(1.5배 보너스).</li>' +
-    '<li>딜러는 합이 17이 될 때까지 카드를 받아.</li></ul></details>';
+    '<li>딜러는 합이 17이 될 때까지 카드를 받아.</li>' +
+    '<li>딜러와 점수가 같으면 <b>딜러가 이겨</b>. (둘 다 블랙잭이면 무승부)</li></ul></details>';
 
   var q = function (s) { return root.querySelector(s); };
   var dealerEl = q('[data-dealer]'), playerEl = q('[data-player]');
@@ -107,7 +108,7 @@
     else if (d > 21) { pay = bet * 2; text = '딜러가 21 넘음! +' + C.fmt(bet); }
     else if (p > d) { pay = bet * 2; text = '승리! +' + C.fmt(bet); }
     else if (p < d) { text = '패배, -' + C.fmt(bet); }
-    else { pay = bet; text = '무승부, 베팅금 반환'; }
+    else { text = '동점은 딜러 승, -' + C.fmt(bet); }
     if (pay > 0) C.add(pay);
     msgEl.textContent = text;
     msgEl.classList.toggle('win', pay > bet);
