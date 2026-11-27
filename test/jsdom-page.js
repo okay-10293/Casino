@@ -8,7 +8,7 @@ const fake = fs.readFileSync(path.join(__dirname, 'fake-supabase.js'), 'utf8');
 function pageHtml() {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8').replace(/<link[^>]*>/g, '');
   return html.replace(/<script src="([^"]+)"><\/script>/g, (m, src) =>
-    '<script>' + (/supabase/.test(src) ? fake : fs.readFileSync(path.join(root, src), 'utf8')) + '</script>');
+    '<script>' + (/supabase/.test(src) ? fake : fs.readFileSync(path.join(root, src.split('?')[0]), 'utf8')) + '</script>');
 }
 
 // 새 "브라우저 탭" 하나. 같은 프로세스의 탭끼리는 BroadcastChannel로 방 메시지를 주고받는다.
