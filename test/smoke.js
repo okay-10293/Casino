@@ -37,7 +37,7 @@ const srv = http.createServer((req, res) => {
 
   // 홀덤: 3핸드, 사람 차례엔 콜/체크 (가끔 레이즈)
   await pg.click('[data-tab=holdem]');
-  await pg.click('#g-holdem .buyins button >> nth=1');
+  await pg.click('#g-holdem .buyin-row .primary');
   console.log('holdem buy-in →', await bal());
   for (let hand = 0; hand < 3; hand++) {
     for (let guard = 0; guard < 300; guard++) {

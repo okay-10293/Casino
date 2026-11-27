@@ -5,7 +5,6 @@
   var C = Casino;
   var sb = window.CasinoSB;
   var root = document.getElementById('g-online');
-  var BUYINS = [1000, 2000, 5000, 10000];
   var ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
   root.innerHTML =
@@ -13,7 +12,7 @@
     '<h2>온라인 홀덤</h2>' +
     '<p>친구들이랑 같이 하는 홀덤이야. 2~6명이 칠 수 있어.</p>' +
     '<ol class="steps"><li><b>방 만들기</b>를 눌러 코드를 받아</li><li>코드나 초대 링크를 친구한테 보내</li><li>친구는 같은 주소로 들어와서 <b>코드를 넣고 입장</b></li></ol>' +
-    '<label class="field">바이인<select id="on-buyin"></select></label>' +
+    '<div class="field"><span>바이인 (전 재산의 80%까지)</span><div data-buyin></div></div>' +
     '<div class="actions"><button type="button" class="primary" data-create>방 만들기</button></div>' +
     '<div class="join-row"><input id="on-code" maxlength="4" placeholder="방 코드 4자리" autocomplete="off" autocapitalize="characters">' +
     '<button type="button" data-join>입장</button></div>' +
@@ -25,18 +24,17 @@
     '<div class="board-area"><div class="pot">팟 <b data-pot>0</b></div><div class="board" data-board></div><div class="msg" data-msg></div></div>' +
     '<div class="seat-me" data-me></div></div>' +
     '<div class="panel hctrl" data-ctrl></div>' +
-    '<ul class="log" data-log></ul></div>';
+    '<ul class="log" data-log></ul><div data-ranks></div></div>';
 
   var q = function (s) { return root.querySelector(s); };
   q('[data-help]').appendChild(C.holdemHelp());
+  q('[data-ranks]').appendChild(C.handTable());
+  var buyinPick = C.buyinPicker();
+  q('[data-buyin]').appendChild(buyinPick.el);
   var lobbyEl = q('[data-lobby]'), tableEl = q('[data-table]'), statusEl = q('[data-status]');
   var topEl = q('[data-top]'), meEl = q('[data-me]'), boardEl = q('[data-board]'), potEl = q('[data-pot]');
   var msgEl = q('[data-msg]'), ctrlEl = q('[data-ctrl]'), logEl = q('[data-log]');
-  var buyinSel = q('#on-buyin'), codeInput = q('#on-code');
-  BUYINS.forEach(function (v) {
-    var o = document.createElement('option'); o.value = v; o.textContent = C.fmt(v); buyinSel.appendChild(o);
-  });
-  buyinSel.value = 2000;
+  var codeInput = q('#on-code');
 
   if (!sb) {
     statusEl.textContent = '서버 라이브러리를 불러오지 못했어. 새로고침하거나 네트워크를 확인해줘.';
@@ -101,9 +99,7 @@
 
   /* ---------- 방 만들기 / 입장 ---------- */
   function readBuyin() {
-    var v = Number(buyinSel.value);
-    if (C.money() < v) { setStatus('게임머니가 부족해. 바이인을 낮추거나 노동 탭에서 벌어와. 리셋도 돼.'); return 0; }
-    return v;
+    return buyinPick.read();
   }
   function prepareMe() { me = { id: C.playerId(), name: C.playerName() }; }
 
@@ -345,9 +341,10 @@
       ctrlEl.appendChild(info);
       var row = document.createElement('div'); row.className = 'actions';
       if (busted) {
-        BUYINS.slice(0, 3).forEach(function (v) {
+        [0.2, 0.5, 0.8].map(function (f) { return Math.floor(C.money() * f); })
+          .filter(function (v, i, a) { return v >= C.minBuyin() && a.indexOf(v) === i; }).forEach(function (v) {
           var b = document.createElement('button'); b.type = 'button'; b.className = 'primary';
-          b.textContent = C.fmt(v) + ' 리바이'; b.disabled = C.money() < v;
+          b.textContent = C.fmt(v) + ' 리바이'; b.disabled = v > C.maxBuyin();
           b.addEventListener('click', function () {
             if (role === 'host') {
               var r = engine.rebuy(me.id, v); if (r.ok) C.add(-v); else C.toast(r.reason);

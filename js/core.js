@@ -122,6 +122,85 @@
     toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
   }
 
+  /* ---------- 바이인 (전 재산의 80%까지, 최소 빅블라인드 1개) ---------- */
+  var MIN_BUYIN = 20;
+  function maxBuyin() { return Math.floor(S.money * 0.8); }
+  function buyinPicker(opt) {
+    opt = opt || {};
+    var wrap = document.createElement('div'); wrap.className = 'buyin-pick';
+    var row = document.createElement('div'); row.className = 'buyin-row';
+    var input = document.createElement('input');
+    input.type = 'number'; input.inputMode = 'numeric'; input.min = MIN_BUYIN; input.step = 10;
+    input.setAttribute('aria-label', '바이인 금액');
+    var maxBtn = document.createElement('button'); maxBtn.type = 'button'; maxBtn.className = 'ghost'; maxBtn.textContent = '최대';
+    var hint = document.createElement('small'); hint.className = 'rule';
+    row.appendChild(input); row.appendChild(maxBtn);
+    var go = null;
+    if (opt.label) {
+      go = document.createElement('button'); go.type = 'button'; go.className = 'primary'; go.textContent = opt.label;
+      row.appendChild(go);
+    }
+    wrap.appendChild(row); wrap.appendChild(hint);
+    var touched = false;
+    function sync() {
+      var mx = maxBuyin();
+      input.max = mx;
+      if (mx < MIN_BUYIN) hint.textContent = '바이인은 전 재산의 80%까지인데 최소 ' + MIN_BUYIN + '은 있어야 해. 노동 탭에서 벌거나 리셋해줘.';
+      else hint.textContent = '최대 ' + fmt(mx) + ' (전 재산 ' + fmt(S.money) + '의 80%)';
+      if (!touched) input.value = mx < MIN_BUYIN ? '' : Math.min(2000, mx);
+      if (go) go.disabled = mx < MIN_BUYIN;
+    }
+    input.addEventListener('input', function () { touched = true; });
+    maxBtn.addEventListener('click', function () { touched = true; input.value = maxBuyin(); });
+    function read() {
+      var v = Math.floor(Number(input.value)), mx = maxBuyin();
+      if (!(v >= MIN_BUYIN)) { toast('바이인은 최소 ' + MIN_BUYIN + '부터야'); return 0; }
+      if (v > mx) { toast('전 재산의 80%까지만 가져갈 수 있어 (최대 ' + fmt(mx) + ')'); return 0; }
+      return v;
+    }
+    if (go) go.addEventListener('click', function () { var v = read(); if (v && opt.onPick) opt.onPick(v); });
+    listeners.push(sync); sync();
+    return { el: wrap, read: read };
+  }
+
+  /* ---------- 족보 표 ---------- */
+  var RANKS = [
+    ['로열 플러시', '같은 무늬 10-J-Q-K-A', [[10, 0], [11, 0], [12, 0], [13, 0], [14, 0]]],
+    ['스트레이트 플러시', '같은 무늬 5장 연속', [[5, 1], [6, 1], [7, 1], [8, 1], [9, 1]]],
+    ['포카드', '같은 숫자 4장', [[13, 0], [13, 1], [13, 2], [13, 3], [3, 2]]],
+    ['풀하우스', '트리플 + 원페어', [[12, 0], [12, 1], [12, 2], [8, 3], [8, 1]]],
+    ['플러시', '같은 무늬 5장 (숫자는 아무거나)', [[14, 1], [11, 1], [9, 1], [6, 1], [3, 1]]],
+    ['스트레이트', '무늬 상관없이 5장 연속 (A-2-3-4-5도 가능)', [[5, 0], [6, 1], [7, 2], [8, 3], [9, 0]]],
+    ['트리플', '같은 숫자 3장', [[7, 0], [7, 1], [7, 3], [13, 2], [2, 1]]],
+    ['투페어', '페어가 두 개', [[11, 0], [11, 2], [4, 1], [4, 3], [14, 0]]],
+    ['원페어', '같은 숫자 2장', [[10, 0], [10, 3], [14, 2], [8, 1], [3, 0]]],
+    ['하이카드', '아무 조합도 없을 때. 제일 높은 카드로 겨뤄', [[14, 0], [12, 1], [9, 3], [6, 2], [2, 0]]]
+  ];
+  function handTable() {
+    var d = document.createElement('details'); d.className = 'help rank-help'; d.open = true;
+    var sm = document.createElement('summary'); sm.textContent = '족보 (센 순서)'; d.appendChild(sm);
+    var t = document.createElement('table'); t.className = 'rank-table';
+    var tb = document.createElement('tbody');
+    RANKS.forEach(function (r, i) {
+      var tr = document.createElement('tr');
+      var a = document.createElement('td'); a.className = 'rk'; a.textContent = i + 1;
+      var b = document.createElement('td'); b.className = 'rn';
+      var nm = document.createElement('b'); nm.textContent = r[0];
+      var ds = document.createElement('small'); ds.textContent = r[1];
+      b.appendChild(nm); b.appendChild(ds);
+      var c = document.createElement('td');
+      var h = document.createElement('div'); h.className = 'hand small';
+      r[2].forEach(function (x) { h.appendChild(cardEl({ r: x[0], s: x[1] })); });
+      c.appendChild(h);
+      tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); tb.appendChild(tr);
+    });
+    t.appendChild(tb); d.appendChild(t);
+    var p = document.createElement('p'); p.className = 'rule';
+    p.textContent = '내 카드 2장 + 공용 카드 5장, 모두 7장 중 가장 센 5장으로 겨뤄. 같은 족보면 숫자가 높은 쪽이 이겨.';
+    d.appendChild(p);
+    return d;
+  }
+
   /* ---------- 시작/탭 ---------- */
   var games = ['blackjack', 'holdem', 'roulette', 'slots', 'online', 'work', 'ranking'];
   function show(tab) {
@@ -174,6 +253,7 @@
       emit();
     },
     setTable: function (n) { S.table = Math.max(0, Math.floor(n)); save(); },
+    maxBuyin: maxBuyin, minBuyin: function () { return MIN_BUYIN; }, buyinPicker: buyinPicker, handTable: handTable,
     playerName: function () { return S.name; },
     playerId: function () { return S.id; },
     onChange: function (f) { listeners.push(f); },
@@ -188,7 +268,7 @@
         '<li><b>넘기기(체크)</b>: 올리는 사람이 없을 때 칩 안 내고 넘겨.</li>' +
         '<li><b>맞추기(콜)</b>: 상대가 건 만큼 나도 내.</li>' +
         '<li><b>올리기(레이즈)</b>: 판돈을 더 키워. 올인은 가진 칩 전부.</li>' +
-        '<li>족보(약→강): 하이카드 &lt; 원페어 &lt; 투페어 &lt; 트리플 &lt; 스트레이트 &lt; 플러시 &lt; 풀하우스 &lt; 포카드 &lt; 스트레이트 플러시</li></ul>';
+        '<li>족보 표는 게임 화면 아래에 있어.</li></ul>';
       return d;
     },
     Cards: { shuffled: shuffled, el: cardEl, rankLabel: rankLabel, SUITS: SUITS }

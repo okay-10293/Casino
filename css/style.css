@@ -193,3 +193,19 @@ select, .join-row input { background: var(--bg); color: var(--fg); border: 1px s
   .reel { width: 76px; height: 96px; font-size: 46px; }
 }
 @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+
+/* 바이인 입력, 족보 표 */
+.buyin-pick { display: flex; flex-direction: column; gap: 6px; }
+.buyin-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.buyin-row input { width: 140px; }
+.rank-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+.rank-table td { padding: 6px 4px; border-top: 1px solid var(--line); vertical-align: middle; }
+.rank-table .rk { width: 22px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rank-table .rn b { display: block; color: var(--fg); font-weight: 700; }
+.rank-table .rn small { color: var(--muted); font-size: 12px; }
+.rank-table .hand { justify-content: flex-end; gap: 3px; }
+@media (max-width: 520px) {
+  .rank-table .hand.small .card { width: 30px; height: 44px; }
+  .rank-table .hand.small .card .cr { font-size: 13px; }
+  .rank-table .hand.small .card .cs { font-size: 13px; }
+}

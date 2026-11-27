@@ -6,14 +6,13 @@
   var root = document.getElementById('g-holdem');
   var SB = 10, BB = 20, BOT_STACK = 2000;
   var BOT_NAMES = ['민수', '지훈', '서연'];
-  var BUYINS = [1000, 2000, 5000, 10000];
   var STAGES = [['플랍', 3], ['턴', 1], ['리버', 1]];
 
   root.innerHTML =
     '<div data-lobby class="lobby panel">' +
     '<h2>텍사스 홀덤</h2>' +
     '<p>혼자 연습하는 판이야. 봇 3명과 한 테이블, 블라인드(강제 베팅) ' + SB + '/' + BB + '.<br>친구랑 하려면 위의 <b>친구랑 홀덤</b> 탭을 써줘.</p>' +
-    '<p>바이인(테이블로 가져가는 칩)만 쓰고, 일어나면 남은 칩이 지갑으로 돌아와.</p>' +
+    '<p>바이인(테이블로 가져가는 칩)은 전 재산의 80%까지 원하는 만큼 가져갈 수 있어. 일어나면 남은 칩이 지갑으로 돌아와.</p>' +
     '<div class="buyins" data-buyins></div><div data-help></div></div>' +
     '<div data-table hidden>' +
     '<div class="felt poker-felt">' +
@@ -24,10 +23,13 @@
     '</div>' +
     '<div class="panel hctrl" data-ctrl></div>' +
     '<ul class="log" data-log></ul>' +
+    '<div data-ranks></div>' +
     '</div>';
 
   var q = function (s) { return root.querySelector(s); };
   q('[data-help]').appendChild(C.holdemHelp());
+  q('[data-ranks]').appendChild(C.handTable());
+  q('[data-buyins]').appendChild(C.buyinPicker({ label: '앉기', onPick: sit }).el);
   var lobbyEl = q('[data-lobby]'), tableEl = q('[data-table]');
   var topEl = q('[data-top]'), meEl = q('[data-me]'), boardEl = q('[data-board]');
   var potEl = q('[data-pot]'), msgEl = q('[data-msg]'), ctrlEl = q('[data-ctrl]'), logEl = q('[data-log]');
@@ -48,25 +50,8 @@
   }
 
   /* ---------- 로비 ---------- */
-  function renderLobby() {
-    var el = q('[data-buyins]'); el.innerHTML = '';
-    BUYINS.forEach(function (v) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'primary'; b.textContent = C.fmt(v) + ' 바이인';
-      b.disabled = C.money() < v;
-      b.addEventListener('click', function () { sit(v); });
-      el.appendChild(b);
-    });
-    if (C.money() < BUYINS[0]) {
-      var p = document.createElement('p'); p.className = 'rule';
-      p.textContent = '바이인은 최소 ' + C.fmt(BUYINS[0]) + '부터야. 노동 탭에서 벌거나 위의 리셋으로 다시 시작할 수 있어.';
-      el.appendChild(p);
-    }
-  }
-  C.onChange(function () { if (!seats.length) renderLobby(); });
-
   function sit(buyin) {
-    if (C.money() < buyin) return C.toast('게임머니가 부족해');
+    if (buyin < C.minBuyin() || buyin > C.maxBuyin()) return C.toast('바이인은 전 재산의 80%까지야');
     C.add(-buyin); C.setTable(buyin);
     seats = [{ name: C.playerName(), bot: false, stack: buyin }].concat(
       BOT_NAMES.map(function (n) { return { name: n, bot: true, stack: BOT_STACK }; }));
@@ -84,7 +69,6 @@
     C.toast(s > 0 ? C.fmt(s) + ' 칩을 지갑으로 가져왔어' : '칩이 다 떨어졌어');
     seats = []; board = [];
     lobbyEl.hidden = false; tableEl.hidden = true;
-    renderLobby();
   }
 
   /* ---------- 렌더 ---------- */
@@ -343,8 +327,6 @@
   }
 
   document.addEventListener('casino:reset', function () {
-    if (seats.length) { location.reload(); return; } // 진행 중인 테이블 상태를 깔끔하게 버린다
-    renderLobby();
+    if (seats.length) location.reload(); // 진행 중인 테이블 상태를 깔끔하게 버린다
   });
-  document.addEventListener('casino:init', renderLobby);
 })();
