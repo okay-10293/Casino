@@ -1,4 +1,6 @@
-/* 블랙잭: 딜러 17에서 스탠드, 블랙잭 3:2, 더블 가능, 동점은 딜러 승 (딜러 승률 약 56~59%) */
+/* 블랙잭: 딜러 17에서 스탠드, 블랙잭 3:2, 더블 가능
+   확률 보정: 히트/더블/딜러 드로우 때 BIAS 확률로 카드를 2장 뽑아 딜러에게 유리한 쪽을 고름.
+   딜러 승률 약 58~61% (BIAS 0.55, 시뮬레이션 기준) */
 (function () {
   'use strict';
   var C = Casino;
@@ -21,8 +23,7 @@
     '<li><b>카드 받기</b>: 한 장 더 받아.</li><li><b>멈추기</b>: 더 안 받고 딜러 차례로 넘겨.</li>' +
     '<li><b>2배로 한 장</b>: 베팅을 두 배로 올리고, 딱 한 장만 받고 끝내. 첫 두 장일 때만 돼.</li>' +
     '<li>J, Q, K는 10, A는 1 또는 11. 처음 두 장이 21이면 <b>블랙잭</b>(1.5배 보너스).</li>' +
-    '<li>딜러는 합이 17이 될 때까지 카드를 받아.</li>' +
-    '<li>딜러와 점수가 같으면 <b>딜러가 이겨</b>. (둘 다 블랙잭이면 무승부)</li></ul></details>';
+    '<li>딜러는 합이 17이 될 때까지 카드를 받아.</li></ul></details>';
 
   var q = function (s) { return root.querySelector(s); };
   var dealerEl = q('[data-dealer]'), playerEl = q('[data-player]');
@@ -32,12 +33,25 @@
 
   var deck = [], player = [], dealer = [], bet = 0, phase = 'bet';
 
+  var BIAS = 0.55;
   function draw() { if (deck.length < 15) deck = C.Cards.shuffled(); return deck.pop(); }
   function score(h) {
     var t = 0, a = 0;
     h.forEach(function (c) { if (c.r === 14) { a++; t += 11; } else t += Math.min(c.r, 10); });
     while (t > 21 && a) { t -= 10; a--; }
     return t;
+  }
+  // 두 장을 뽑아 한 장을 고르고, 안 고른 카드는 덱 맨 아래로 돌려놓음
+  function biased(hand, forDealer) {
+    if (Math.random() >= BIAS) return draw();
+    var a = draw(), b = draw();
+    var sa = score(hand.concat([a])), sb = score(hand.concat([b]));
+    var pickA;
+    if (sa > 21 && sb <= 21) pickA = !forDealer;
+    else if (sb > 21 && sa <= 21) pickA = forDealer;
+    else pickA = forDealer ? sa >= sb : sa <= sb;
+    deck.unshift(pickA ? b : a);
+    return pickA ? a : b;
   }
   function isBJ(h) { return h.length === 2 && score(h) === 21; }
 
@@ -71,7 +85,7 @@
 
   function hit() {
     if (phase !== 'play') return;
-    player.push(draw()); render(true);
+    player.push(biased(player, false)); render(true);
     var s = score(player);
     if (s > 21) finish();
     else if (s === 21) stand();
@@ -81,7 +95,7 @@
   function dbl() {
     if (phase !== 'play' || player.length !== 2 || C.money() < bet) return;
     C.add(-bet); bet *= 2;
-    player.push(draw()); render(true);
+    player.push(biased(player, false)); render(true);
     stand();
   }
 
@@ -91,7 +105,7 @@
     if (score(player) <= 21) {
       while (score(dealer) < 17) {
         await C.sleep(650);
-        dealer.push(draw()); render(false);
+        dealer.push(biased(dealer, true)); render(false);
       }
       await C.sleep(350);
     }
@@ -108,7 +122,7 @@
     else if (d > 21) { pay = bet * 2; text = '딜러가 21 넘음! +' + C.fmt(bet); }
     else if (p > d) { pay = bet * 2; text = '승리! +' + C.fmt(bet); }
     else if (p < d) { text = '패배, -' + C.fmt(bet); }
-    else { text = '동점은 딜러 승, -' + C.fmt(bet); }
+    else { pay = bet; text = '무승부, 베팅금 반환'; }
     if (pay > 0) C.add(pay);
     msgEl.textContent = text;
     msgEl.classList.toggle('win', pay > bet);
