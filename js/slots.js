@@ -1,4 +1,4 @@
-/* 슬롯: 릴 3개, 한 줄. 환수율은 약 76% (README 참고) */
+/* 슬롯: 릴 3개, 한 줄. 환수율은 약 85% (README 참고) */
 (function () {
   'use strict';
   var C = Casino;
@@ -12,7 +12,7 @@
     { s: '💎', w: 9, m: 80 },
     { s: '7️⃣', w: 5, m: 300 }
   ];
-  var TWO_CHERRY = 1.5;
+  var TWO_CHERRY = 2;
   var TOTAL_W = SYMS.reduce(function (s, x) { return s + x.w; }, 0);
 
   function pick() {
