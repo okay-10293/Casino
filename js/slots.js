@@ -68,7 +68,7 @@
     msgEl.textContent = pay ? (mult >= 30 ? '잭팟! ' : '당첨! ') + '+' + C.fmt(pay - b) + ' (x' + mult + ')' : '꽝, -' + C.fmt(b);
     msgEl.classList.toggle('win', pay > 0);
     busy = false; pull.disabled = false; bar.lock(false);
-    if (C.money() < bar.min) C.toast('게임머니가 바닥났어. 위의 리셋을 눌러줘');
+    if (C.money() < bar.min) C.toast('게임머니가 바닥났어. 노동 탭에서 벌어봐');
   }
   pull.addEventListener('click', spin);
 

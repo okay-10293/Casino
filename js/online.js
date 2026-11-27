@@ -45,7 +45,7 @@
   }
 
   var channel = null, role = null, code = '', me = null, engine = null;
-  var snap = null, myHand = [], localDeadline = 0, hostKey = null, busy = false;
+  var snap = null, myHand = [], myHandNo = 0, localDeadline = 0, hostKey = null, busy = false;
   var sendTimer = null, pendingState = null, ctrlKey = '', clock = null;
 
   function setStatus(t) { statusEl.textContent = t || ''; }
@@ -102,7 +102,7 @@
   /* ---------- 방 만들기 / 입장 ---------- */
   function readBuyin() {
     var v = Number(buyinSel.value);
-    if (C.money() < v) { setStatus('게임머니가 부족해. 바이인을 낮춰줘.'); return 0; }
+    if (C.money() < v) { setStatus('게임머니가 부족해. 바이인을 낮추거나 노동 탭에서 벌어와.'); return 0; }
     return v;
   }
   function prepareMe() { me = { id: C.playerId(), name: C.playerName() }; }
@@ -120,8 +120,8 @@
     engine = OnlineEngine.createEngine({
       shuffled: C.Cards.shuffled,
       onState: function (s) { onEngineState(s); },
-      onPrivate: function (id, cards) {
-        if (id === me.id) { myHand = cards; render(); } else send({ t: 'hand', to: id, cards: cards });
+      onPrivate: function (id, cards, no) {
+        if (id === me.id) { myHand = cards; myHandNo = no; render(); } else send({ t: 'hand', to: id, cards: cards, no: no });
       }
     });
     C.add(-buyin); C.setTable(buyin);
@@ -176,7 +176,7 @@
     if (stack > 0) C.add(stack);
     C.setTable(0);
     if (refund !== false) C.toast(stack > 0 ? C.fmt(stack) + ' 칩을 지갑으로 가져왔어' : '방에서 나왔어');
-    engine = null; snap = null; myHand = []; ctrlKey = '';
+    engine = null; snap = null; myHand = []; myHandNo = 0; ctrlKey = '';
     lobbyEl.hidden = false; tableEl.hidden = true; busy = false; setStatus('');
   }
 
@@ -195,7 +195,7 @@
       } else if (m.t === 'hello') {
         pushState(true);
         var seat = engine._seats().filter(function (s) { return s.id === m.id; })[0];
-        if (seat && seat.hand.length && !seat.folded) send({ t: 'hand', to: m.id, cards: seat.hand });
+        if (seat && seat.hand.length && !seat.folded) send({ t: 'hand', to: m.id, cards: seat.hand, no: engine.snapshot().handNo });
       } else if (m.t === 'action') {
         engine.action(String(m.id), m.a);
       } else if (m.t === 'leave') {
@@ -216,7 +216,7 @@
       } else if (m.t === 'state' && role === 'guest') {
         applyState(m.s);
       } else if (m.t === 'hand' && m.to === me.id) {
-        myHand = m.cards || []; render();
+        myHand = m.cards || []; myHandNo = Number(m.no) || 0; render();
       } else if (m.t === 'bye' && role === 'guest') {
         hostGone();
       }
@@ -239,9 +239,7 @@
   }
   function applyState(s) {
     if (!role) return;
-    var prevHand = snap ? snap.handNo : 0;
     snap = s; localDeadline = Date.now() + (s.turnLeft || 0);
-    if (s.handNo !== prevHand && s.phase === 'hand' && role === 'guest') myHand = [];
     var mine = s.seats.filter(function (x) { return x.id === me.id; })[0];
     if (mine) C.setTable(mine.stack);
     render();
@@ -264,7 +262,7 @@
     d.appendChild(head);
     var st = document.createElement('div'); st.className = 'pstack'; st.textContent = C.fmt(s.stack); d.appendChild(st);
     var cards = document.createElement('div'); cards.className = 'hand small';
-    if (isMe && myHand.length && s.inHand) myHand.forEach(function (c) { cards.appendChild(C.Cards.el(c)); });
+    if (isMe && myHand.length && myHandNo === snap.handNo && s.inHand) myHand.forEach(function (c) { cards.appendChild(C.Cards.el(c)); });
     else if (s.hand) s.hand.forEach(function (c) { cards.appendChild(C.Cards.el(c)); });
     else if (s.hasCards && s.inHand) { cards.appendChild(C.Cards.el(null, true)); cards.appendChild(C.Cards.el(null, true)); }
     d.appendChild(cards);
@@ -376,7 +374,6 @@
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, function () { C.toast('방 코드: ' + code); });
     else C.toast('방 코드: ' + code);
   });
-  document.addEventListener('casino:reset', function () { if (role) location.reload(); });
   window.addEventListener('beforeunload', function () { if (role === 'host' && channel) { try { send({ t: 'bye' }); } catch (e) {} } });
 
   // 초대 링크(?room=ABCD)로 들어오면 온라인 탭을 열고 코드를 채운다

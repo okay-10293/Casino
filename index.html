@@ -16,7 +16,6 @@
   <div class="wallet">
     <input id="player-name" maxlength="10" aria-label="이름" value="플레이어">
     <div class="balance" title="보유 게임머니"><small>게임머니</small><b id="balance">0</b></div>
-    <button id="reset-btn" class="ghost" type="button">리셋</button>
   </div>
 </header>
 
@@ -26,6 +25,7 @@
   <button type="button" data-tab="online">친구랑 홀덤</button>
   <button type="button" data-tab="roulette">룰렛</button>
   <button type="button" data-tab="slots">슬롯</button>
+  <button type="button" data-tab="work">노동</button>
   <button type="button" data-tab="ranking">랭킹</button>
 </nav>
 
@@ -35,6 +35,7 @@
   <section id="g-roulette" class="game" hidden></section>
   <section id="g-slots" class="game" hidden></section>
   <section id="g-online" class="game" hidden></section>
+  <section id="g-work" class="game" hidden></section>
   <section id="g-ranking" class="game" hidden></section>
 </main>
 
@@ -52,6 +53,7 @@
 <script src="js/slots.js"></script>
 <script src="js/holdem.js"></script>
 <script src="js/online.js"></script>
+<script src="js/work.js"></script>
 <script src="js/leaderboard.js"></script>
 <script>Casino.start();</script>
 </body>

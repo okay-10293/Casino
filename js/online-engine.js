@@ -193,7 +193,7 @@
       currentBet = BB; minRaise = BB;
       hand.forEach(function (p) {
         p.hand = [deck.pop(), deck.pop()];
-        if (opt.onPrivate) opt.onPrivate(p.id, p.hand.slice());
+        if (opt.onPrivate) opt.onPrivate(p.id, p.hand.slice(), handNo);
       });
       msg = '새 핸드 #' + handNo;
       say(hand[sb].name + ' SB ' + SB + ', ' + hand[bb].name + ' BB ' + BB);

@@ -9,6 +9,7 @@
 - **온라인 홀덤**: 방 코드로 친구 2~6명이 같이 침. 초대 링크(`?room=코드`) 지원
 - 룰렛: 유러피안(0 하나), 숫자/색/홀짝/더즌 베팅
 - 슬롯: 릴 3개, 환수율 약 96%
+- **노동**: 게임머니가 바닥나면 여기서 일해서 벌어. 전단지 돌리기(연타), 택배 분류(반응속도), 청소(기다리기). 예전의 리셋 버튼은 없앴어.
 - 랭킹: 잔액 상위 30명 (Supabase)
 
 ## 온라인 구조
@@ -29,6 +30,9 @@ node test/poker-eval.test.js     # 족보 판정
 node test/online-engine.test.js  # 엔진 시뮬레이션 (칩 보존)
 node test/smoke.js               # 혼자 하는 4게임 UI
 node test/online-smoke.js        # 가짜 Realtime으로 3인 온라인 UI
+# 아래 둘은 jsdom이 필요해: npm i --no-save jsdom
+node test/online-hands.test.js   # 온라인에서 손님도 핸드마다 자기 패가 보이는지
+node test/work.test.js           # 노동 탭 (약 35초)
 ```
 
 ## 구조
@@ -36,4 +40,5 @@ node test/online-smoke.js        # 가짜 Realtime으로 3인 온라인 UI
 - `js/poker-eval.js` 7장 중 베스트 5장 평가
 - `js/{blackjack,roulette,slots,holdem}.js` 혼자 하는 게임
 - `js/online-engine.js`, `js/online.js` 온라인 홀덤
+- `js/work.js` 노동 (일해서 게임머니 벌기)
 - `js/config.js` Supabase 공개 URL/anon 키, `js/leaderboard.js` 랭킹

@@ -112,7 +112,7 @@
   }
 
   /* ---------- 시작/탭 ---------- */
-  var games = ['blackjack', 'holdem', 'roulette', 'slots', 'online', 'ranking'];
+  var games = ['blackjack', 'holdem', 'roulette', 'slots', 'online', 'work', 'ranking'];
   function show(tab) {
     if (games.indexOf(tab) < 0) tab = 'blackjack';
     games.forEach(function (g) { document.getElementById('g-' + g).hidden = g !== tab; });
@@ -126,23 +126,10 @@
   function start() {
     var nameEl = document.getElementById('player-name');
     var balEl = document.getElementById('balance');
-    var resetBtn = document.getElementById('reset-btn');
     nameEl.value = S.name;
     nameEl.addEventListener('change', function () {
       S.name = (nameEl.value.trim() || '플레이어').slice(0, 10);
       nameEl.value = S.name; emit();
-    });
-    var armed = false, armTimer;
-    resetBtn.addEventListener('click', function () {
-      if (!armed) {
-        armed = true; resetBtn.textContent = '한 번 더';
-        armTimer = setTimeout(function () { armed = false; resetBtn.textContent = '리셋'; }, 2500);
-        return;
-      }
-      clearTimeout(armTimer); armed = false; resetBtn.textContent = '리셋';
-      S.money = START; S.table = 0; emit();
-      document.dispatchEvent(new CustomEvent('casino:reset'));
-      toast('게임머니 ' + fmt(START) + '으로 리셋');
     });
     listeners.push(function () { balEl.textContent = fmt(S.money); });
     document.getElementById('tabs').addEventListener('click', function (e) {

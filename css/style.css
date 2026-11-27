@@ -162,6 +162,26 @@ select, .join-row input { background: var(--bg); color: var(--fg); border: 1px s
 .rank b { font: 700 18px var(--f-disp); font-variant-numeric: tabular-nums; }
 .rank small { grid-column: 2 / -1; color: var(--muted); }
 
+/* 노동 */
+.work-panel h2 { margin: 0; font: 700 22px var(--f-disp); letter-spacing: .06em; }
+.work-panel .rule { margin: 0; }
+.jobs { display: flex; flex-direction: column; gap: 10px; }
+.job { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; text-align: left; }
+.job .ji { font-size: 30px; flex: none; }
+.job b { display: block; }
+.job .jp { margin-left: auto; flex: none; text-align: right; color: var(--brass); font: 700 16px var(--f-disp); white-space: nowrap; }
+.work-total { color: var(--muted); font-size: 13px; } .work-total b { color: var(--brass); font-variant-numeric: tabular-nums; }
+.work-felt { align-items: stretch; margin-top: 12px; }
+.work-head { display: flex; justify-content: space-between; align-items: center; } .work-head b { font-size: 18px; }
+.work-bar { height: 8px; border-radius: 999px; background: #0006; overflow: hidden; }
+.work-bar i { display: block; height: 100%; width: 0; background: var(--brass); }
+.work-body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 170px; }
+.work-big { width: 100%; min-height: 130px; font-size: 22px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.work-count { color: var(--muted); } .work-count b { color: var(--fg); font: 700 22px var(--f-disp); font-variant-numeric: tabular-nums; }
+.parcel { font-size: 52px; line-height: 1.1; text-align: center; } .parcel b { display: block; font: 700 28px var(--f-disp); color: var(--fg); }
+.dest { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+.dest button { min-height: 64px; font-size: 18px; font-weight: 700; touch-action: manipulation; }
+
 @media (max-width: 560px) {
   .rboard { grid-template-columns: 1fr; }
   .numgrid { grid-template-columns: repeat(6, 1fr); }
