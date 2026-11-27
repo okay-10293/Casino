@@ -1,0 +1,149 @@
+/* 오케이 카지노: 짙은 펠트 그린 + 황동 포인트. 단일 다크 테마. */
+:root {
+  --bg: #0a1511;
+  --bg-2: #0f1f19;
+  --felt: #134030;
+  --felt-2: #0e3124;
+  --line: #24493a;
+  --fg: #e8efe9;
+  --muted: #8ea89b;
+  --brass: #d6a94a;
+  --brass-ink: #20160a;
+  --red: #c9443d;
+  --black: #1a1d1c;
+  --win: #7ddc9a;
+  --f-body: 'Noto Sans KR', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-disp: 'Oswald', 'Noto Sans KR', Impact, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 15px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 24px;
+  max-width: 980px; margin-inline: auto;
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--bg-2); border-radius: 8px; padding: 10px 14px; min-height: 44px; }
+button:hover:not(:disabled) { border-color: var(--brass); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button.primary { background: var(--brass); color: var(--brass-ink); border-color: var(--brass); font-weight: 700; }
+button.ghost { background: transparent; color: var(--muted); min-height: 36px; padding: 6px 10px; font-size: 13px; }
+[hidden] { display: none !important; }
+
+/* 헤더 */
+.top { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding-block: 14px 8px; }
+.brand { font: 700 26px/1 var(--f-disp); letter-spacing: .12em; }
+.brand span { color: var(--brass); margin-left: 6px; }
+.wallet { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.wallet input { width: 7.5em; background: transparent; color: var(--fg); border: 0; border-bottom: 1px solid var(--line); padding: 6px 2px; font: inherit; }
+.balance { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
+.balance small { color: var(--muted); font-size: 11px; letter-spacing: .08em; }
+.balance b { font: 700 24px/1.1 var(--f-disp); color: var(--brass); font-variant-numeric: tabular-nums; }
+
+.tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.tabs button { border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: transparent; color: var(--muted); padding: 10px 14px; white-space: nowrap; }
+.tabs button.on { color: var(--fg); border-bottom-color: var(--brass); font-weight: 700; }
+
+/* 공통 판 */
+.felt { background: radial-gradient(ellipse at 50% 30%, var(--felt), var(--felt-2)); border: 1px solid var(--line); border-radius: 14px; padding: 18px 14px; display: flex; flex-direction: column; gap: 14px; }
+.panel { margin-top: 12px; padding: 14px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; gap: 12px; }
+.msg { text-align: center; min-height: 1.6em; font-weight: 500; color: var(--fg); overflow-wrap: anywhere; }
+.msg.win { color: var(--win); }
+.rule { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions button { flex: 1 1 90px; }
+.foot { margin-top: 28px; color: var(--muted); font-size: 12px; text-align: center; }
+
+/* 카드 */
+.hand { display: flex; flex-wrap: wrap; gap: 6px; min-height: 84px; align-items: center; }
+.hand.small { min-height: 0; gap: 4px; }
+.card { width: 56px; height: 80px; background: #f4f5f2; color: var(--black); border-radius: 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; box-shadow: 0 2px 6px #0006; font-weight: 700; flex: none; }
+.card .cr { font: 700 22px/1 var(--f-disp); }
+.card .cs { font-size: 24px; }
+.card.red { color: var(--red); }
+.card.back { background: repeating-linear-gradient(45deg, #2a4f8a 0 6px, #213f70 6px 12px); border: 3px solid #f4f5f2; }
+.card.slot { background: transparent; border: 1px dashed var(--line); box-shadow: none; }
+.hand.small .card { width: 40px; height: 58px; }
+.hand.small .card .cr { font-size: 16px; }
+.hand.small .card .cs { font-size: 17px; }
+.zone-label { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.zone-label b { color: var(--fg); font-size: 16px; margin-left: 4px; }
+
+/* 베팅 바 */
+.betbar { display: flex; flex-direction: column; gap: 10px; }
+.betbar.locked { opacity: .55; }
+.bet-line { display: flex; justify-content: space-between; align-items: baseline; color: var(--muted); }
+.bet-line b { font: 700 26px/1 var(--f-disp); color: var(--fg); font-variant-numeric: tabular-nums; }
+.chips, .chip-pick { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { width: 56px; height: 56px; border-radius: 50%; padding: 0; font: 700 14px/1 var(--f-disp); border: 3px dashed #fff8; color: #fff; }
+.chip.c100 { background: #3a6ea5; } .chip.c500 { background: #3d8b5a; } .chip.c1000 { background: #8a4fa0; }
+.chip.c5000 { background: #b4472f; } .chip.c10000 { background: #2a2a2a; }
+.chip.sel { outline: 3px solid var(--brass); outline-offset: 2px; }
+.bet-tools { display: flex; gap: 8px; } .bet-tools button { flex: 1; padding: 6px; min-height: 38px; font-size: 13px; }
+
+/* 룰렛 */
+.wheel { display: grid; place-items: center; }
+.ball { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; font: 700 40px/1 var(--f-disp); background: #222; border: 5px solid var(--brass); font-variant-numeric: tabular-nums; }
+.ball.red { background: var(--red); } .ball.black { background: var(--black); } .ball.green { background: #1f7a4a; }
+.history { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 28px; }
+.history .h { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.h.red { background: var(--red); } .h.black { background: var(--black); border: 1px solid var(--line); } .h.green { background: #1f7a4a; }
+.rboard { margin-top: 12px; display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 14px; align-items: start; }
+.numgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.outgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; }
+.spot { position: relative; min-height: 44px; padding: 4px; border-radius: 6px; font-weight: 700; font-variant-numeric: tabular-nums; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; border-color: #ffffff22; }
+.spot.red { background: var(--red); } .spot.black { background: var(--black); } .spot.green, .spot.zero { background: #1f7a4a; }
+.spot.zero { grid-column: 1 / -1; }
+.spot.out { background: var(--bg-2); } .spot.out small { color: var(--muted); font-weight: 400; }
+.spot.has { outline: 2px solid var(--brass); }
+.stake { position: absolute; right: 2px; top: -6px; font-style: normal; font-size: 11px; background: var(--brass); color: var(--brass-ink); border-radius: 9px; padding: 0 5px; }
+.stake:empty { display: none; }
+
+/* 슬롯 */
+.slot-felt { align-items: center; }
+.reels { display: flex; gap: 10px; }
+.reel { width: 92px; height: 110px; display: grid; place-items: center; font-size: 56px; background: #f4f5f2; border-radius: 10px; border: 4px solid var(--brass); box-shadow: inset 0 0 14px #0005; }
+.reel.spin { filter: blur(1.2px); }
+.paytable { margin-top: 12px; width: 100%; max-width: 320px; border-collapse: collapse; color: var(--muted); font-size: 14px; }
+.paytable caption { text-align: left; padding-bottom: 6px; font-size: 12px; letter-spacing: .06em; }
+.paytable td { padding: 4px 0; border-top: 1px solid var(--line); } .paytable td:last-child { text-align: right; color: var(--fg); font-variant-numeric: tabular-nums; }
+
+/* 홀덤 */
+.lobby h2 { margin: 0; font: 700 22px var(--f-disp); letter-spacing: .06em; }
+.lobby p { margin: 0; color: var(--muted); }
+.buyins { display: flex; flex-wrap: wrap; gap: 8px; }
+.poker-felt { gap: 16px; }
+.seats-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.pseat { background: #0006; border: 1px solid transparent; border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pseat.acting { border-color: var(--brass); }
+.pseat.folded { opacity: .45; }
+.pseat.me { align-items: center; }
+.ph { display: flex; align-items: center; gap: 6px; }
+.pn { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dbtn { font-style: normal; background: var(--brass); color: var(--brass-ink); border-radius: 50%; width: 18px; height: 18px; font-size: 11px; display: grid; place-items: center; font-weight: 700; }
+.pstack { font: 700 16px var(--f-disp); color: var(--brass); font-variant-numeric: tabular-nums; }
+.pnote { font-size: 12px; color: var(--muted); min-height: 1.2em; } .pnote.res { color: var(--win); font-weight: 700; }
+.board-area { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pot { color: var(--muted); } .pot b { font: 700 20px var(--f-disp); color: var(--fg); }
+.board { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.hctrl { gap: 10px; }
+.raise-row { display: flex; flex-direction: column; gap: 8px; }
+.raise-row input[type=range] { width: 100%; accent-color: var(--brass); }
+.presets { display: flex; gap: 6px; } .presets button { flex: 1; min-height: 36px; padding: 4px; font-size: 13px; }
+.log { list-style: none; margin: 12px 0 0; padding: 0; color: var(--muted); font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); background: var(--brass); color: var(--brass-ink); padding: 10px 16px; border-radius: 999px; font-weight: 700; opacity: 0; pointer-events: none; transition: .2s; max-width: calc(100vw - 32px); text-align: center; z-index: 20; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 560px) {
+  .rboard { grid-template-columns: 1fr; }
+  .numgrid { grid-template-columns: repeat(6, 1fr); }
+  .spot.zero { grid-column: 1 / -1; }
+  .card { width: 50px; height: 72px; }
+  .reel { width: 76px; height: 96px; font-size: 46px; }
+}
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
