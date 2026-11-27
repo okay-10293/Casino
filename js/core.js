@@ -2,8 +2,9 @@
 (function () {
   'use strict';
   var KEY = 'okay-casino-v1';
-  var START = 10000;
-  var S = { id: '', name: '플레이어', money: START, table: 0, peak: START, skip: false };
+  var SCALE = 100;            // 모든 금액 100배 (v2)
+  var START = 10000 * SCALE;  // 리셋 금액 100만
+  var S = { v: 2, id: '', name: '플레이어', money: START, table: 0, peak: START, skip: false };
   try {
     var saved = JSON.parse(localStorage.getItem(KEY));
     if (saved && typeof saved.id === 'string' && /^[0-9a-f-]{36}$/.test(saved.id)) S.id = saved.id;
@@ -13,6 +14,8 @@
       S.table = Math.max(0, Math.floor(saved.table || 0));
       S.peak = Math.max(S.money, saved.peak || 0);
       S.skip = saved.skip === true;
+      // 예전(100배 이전) 저장값이면 한 번만 100배로 올려준다
+      if (saved.v !== 2) { S.money *= SCALE; S.table *= SCALE; S.peak *= SCALE; }
     }
   } catch (e) {}
   if (!S.id) S.id = (crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, function (c) { return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16); }));
@@ -32,6 +35,7 @@
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   function fmt(n) { return Math.floor(n).toLocaleString('ko-KR'); }
   function fmtShort(n) {
+    if (n >= 100000000) return (n / 100000000) + '억';
     if (n >= 10000) return (n / 10000) + '만';
     if (n >= 1000) return (n / 1000) + '천';
     return String(n);
@@ -66,14 +70,14 @@
   /* ---------- 베팅 바 ---------- */
   function betBar(el, opts) {
     opts = opts || {};
-    var min = opts.min || 100;
+    var min = opts.min || 100 * SCALE;
     var value = 0;
-    var chips = [100, 500, 1000, 5000, 10000];
+    var chips = [100, 500, 1000, 5000, 10000].map(function (v) { return v * SCALE; });
     el.className = 'betbar';
     el.innerHTML =
       '<div class="bet-line"><span>베팅</span><b data-v>0</b></div>' +
       '<div class="chips">' + chips.map(function (v) {
-        return '<button type="button" class="chip c' + v + '" data-add="' + v + '">' + fmtShort(v) + '</button>';
+        return '<button type="button" class="chip c' + (v / SCALE) + '" data-add="' + v + '">' + fmtShort(v) + '</button>';
       }).join('') + '</div>' +
       '<div class="bet-tools"><button type="button" data-act="half">절반</button>' +
       '<button type="button" data-act="max">올인</button>' +
@@ -123,14 +127,14 @@
   }
 
   /* ---------- 바이인 (전 재산의 80%까지, 최소 빅블라인드 1개) ---------- */
-  var MIN_BUYIN = 20;
+  var MIN_BUYIN = 20 * SCALE;
   function maxBuyin() { return Math.floor(S.money * 0.8); }
   function buyinPicker(opt) {
     opt = opt || {};
     var wrap = document.createElement('div'); wrap.className = 'buyin-pick';
     var row = document.createElement('div'); row.className = 'buyin-row';
     var input = document.createElement('input');
-    input.type = 'number'; input.inputMode = 'numeric'; input.min = MIN_BUYIN; input.step = 10;
+    input.type = 'number'; input.inputMode = 'numeric'; input.min = MIN_BUYIN; input.step = 10 * SCALE;
     input.setAttribute('aria-label', '바이인 금액');
     var maxBtn = document.createElement('button'); maxBtn.type = 'button'; maxBtn.className = 'ghost'; maxBtn.textContent = '최대';
     var hint = document.createElement('small'); hint.className = 'rule';
@@ -147,7 +151,7 @@
       input.max = mx;
       if (mx < MIN_BUYIN) hint.textContent = '바이인은 전 재산의 80%까지인데 최소 ' + MIN_BUYIN + '은 있어야 해. 노동 탭에서 벌거나 리셋해줘.';
       else hint.textContent = '최대 ' + fmt(mx) + ' (전 재산 ' + fmt(S.money) + '의 80%)';
-      if (!touched) input.value = mx < MIN_BUYIN ? '' : Math.min(2000, mx);
+      if (!touched) input.value = mx < MIN_BUYIN ? '' : Math.min(2000 * SCALE, mx);
       if (go) go.disabled = mx < MIN_BUYIN;
     }
     input.addEventListener('input', function () { touched = true; });
@@ -216,6 +220,13 @@
     });
   }
 
+  /* ---------- 리셋 (리셋 버튼 두 번 / 슬롯에서 엔터 두 번) ---------- */
+  function reset() {
+    S.money = START; S.table = 0; emit();
+    document.dispatchEvent(new CustomEvent('casino:reset'));
+    toast('게임머니 ' + fmt(START) + '으로 리셋');
+  }
+
   /* ---------- 시작/탭 ---------- */
   var games = ['blackjack', 'holdem', 'roulette', 'slots', 'online', 'work', 'ranking'];
   function show(tab) {
@@ -245,9 +256,7 @@
         return;
       }
       clearTimeout(armTimer); armed = false; resetBtn.textContent = '리셋';
-      S.money = START; S.table = 0; emit();
-      document.dispatchEvent(new CustomEvent('casino:reset'));
-      toast('게임머니 ' + fmt(START) + '으로 리셋');
+      reset();
     });
     listeners.push(function () { balEl.textContent = fmt(S.money); });
     document.getElementById('tabs').addEventListener('click', function (e) {
@@ -261,6 +270,7 @@
 
   window.Casino = {
     start: start,
+    reset: reset,
     money: function () { return S.money; },
     add: function (n) {
       S.money = Math.max(0, S.money + Math.floor(n));

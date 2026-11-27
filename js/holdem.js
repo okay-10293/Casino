@@ -4,7 +4,7 @@
   'use strict';
   var C = Casino, P = Poker;
   var root = document.getElementById('g-holdem');
-  var SB = 10, BB = 20, BOT_STACK = 2000;
+  var SB = 1000, BB = 2000, BOT_STACK = 200000;
   var BOT_NAMES = ['민수', '지훈', '서연'];
   var STAGES = [['플랍', 3], ['턴', 1], ['리버', 1]];
 
@@ -206,7 +206,7 @@
     var canRaise = maxTo > currentBet;
     var potNow = pot();
     function sized(frac) {
-      var to = currentBet + Math.round((potNow + (currentBet - p.bet)) * frac / 10) * 10;
+      var to = currentBet + Math.round((potNow + (currentBet - p.bet)) * frac / 1000) * 1000;
       return Math.max(minTo, Math.min(maxTo, to));
     }
     ctrlEl.innerHTML =
@@ -215,7 +215,7 @@
       '<button type="button" class="primary" data-a="call">' + (toCall === 0 ? '넘기기<small>체크</small>' : '맞추기 ' + C.fmt(toCall) + '<small>콜</small>') + '</button>' +
       (canRaise ? '<button type="button" data-a="raise" class="primary">' + (currentBet === 0 ? '베팅하기' : '올리기<small>레이즈</small>') + ' <b data-rv>' + C.fmt(minTo) + '</b></button>' : '') +
       '</div>' +
-      (canRaise ? '<div class="raise-row"><input type="range" id="raise-range" min="' + minTo + '" max="' + maxTo + '" step="10" value="' + minTo + '">' +
+      (canRaise ? '<div class="raise-row"><input type="range" id="raise-range" min="' + minTo + '" max="' + maxTo + '" step="1000" value="' + minTo + '">' +
         '<div class="presets"><button type="button" data-set="' + minTo + '">최소</button>' +
         '<button type="button" data-set="' + sized(0.5) + '">1/2 팟</button>' +
         '<button type="button" data-set="' + sized(1) + '">팟</button>' +
@@ -255,7 +255,7 @@
     var toCall = currentBet - p.bet, potNow = pot();
     var str = strength(p), r = Math.random();
     var raiseTo = function (frac) {
-      var to = currentBet + Math.max(minRaise, Math.round((potNow + toCall) * frac / 10) * 10);
+      var to = currentBet + Math.max(minRaise, Math.round((potNow + toCall) * frac / 1000) * 1000);
       return { type: 'raise', to: Math.min(to, p.bet + p.stack) };
     };
     if (toCall <= 0) {

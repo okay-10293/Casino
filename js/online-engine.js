@@ -5,7 +5,7 @@
   var Poker = (typeof require !== 'undefined' && typeof module !== 'undefined') ? require('./poker-eval.js') : root.Poker;
 
   function createEngine(opt) {
-    var SB = opt.sb || 10, BB = opt.bb || 20, MAX = opt.maxSeats || 6;
+    var SB = opt.sb || 1000, BB = opt.bb || 2000, MAX = opt.maxSeats || 6;
     var sleep = opt.sleep || function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
     var turnMs = opt.turnMs || 30000;
     var betweenMs = opt.betweenMs == null ? 6000 : opt.betweenMs;

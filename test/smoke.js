@@ -18,7 +18,7 @@ const srv = http.createServer((req, res) => {
 
   // 블랙잭
   await pg.click('[data-tab=blackjack]');
-  await pg.click('#g-blackjack [data-add="1000"]'); await pg.click('#g-blackjack [data-deal]');
+  await pg.click('#g-blackjack [data-add="100000"]'); await pg.click('#g-blackjack [data-deal]');
   await pg.waitForTimeout(200);
   if (await pg.isEnabled('#g-blackjack [data-stand]')) { await pg.click('#g-blackjack [data-stand]'); await pg.waitForFunction(() => !/골라줘/.test(document.querySelector('#g-blackjack [data-msg]').textContent), null, { timeout: 15000 }); }
   console.log('blackjack:', await pg.textContent('#g-blackjack [data-msg]'), await bal());
@@ -31,7 +31,7 @@ const srv = http.createServer((req, res) => {
 
   // 슬롯
   await pg.click('[data-tab=slots]');
-  await pg.click('#g-slots [data-add="500"]'); await pg.click('#g-slots [data-pull]');
+  await pg.click('#g-slots [data-pull]');
   await pg.waitForFunction(() => !document.querySelector('#g-slots [data-pull]').disabled, null, { timeout: 10000 });
   console.log('slots:', await pg.textContent('#g-slots [data-msg]'), await bal());
 

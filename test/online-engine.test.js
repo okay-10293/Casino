@@ -21,7 +21,7 @@ async function run(label, nPlayers, hands, opts = {}) {
   const ids = [];
   for (let i = 0; i < nPlayers; i++) {
     const id = 'p' + i; ids.push(id);
-    const stack = [1000, 2000, 5000, 300, 800, 1500][i];
+    const stack = [100000, 200000, 500000, 30000, 80000, 150000][i];
     assert(eng.addPlayer(id, 'P' + i, stack).ok);
     expectedTotal += stack;
   }
@@ -57,10 +57,10 @@ async function run(label, nPlayers, hands, opts = {}) {
 
   // 중도 퇴장/리바이/자리 꽉 참
   const eng = createEngine({ shuffled, turnMs: 5000, betweenMs: 0, dealMs: 0, streetMs: 0, sleep: () => Promise.resolve() });
-  for (let i = 0; i < 6; i++) assert(eng.addPlayer('q' + i, 'Q' + i, 1000).ok);
-  assert.strictEqual(eng.addPlayer('q6', 'Q6', 1000).ok, false, '7번째는 거절');
+  for (let i = 0; i < 6; i++) assert(eng.addPlayer('q' + i, 'Q' + i, 100000).ok);
+  assert.strictEqual(eng.addPlayer('q6', 'Q6', 100000).ok, false, '7번째는 거절');
   assert.strictEqual(eng.addPlayer('qx', 'QX', 0).ok, false);
-  assert.strictEqual(eng.rebuy('q0', 500).ok, false, '칩이 남아있으면 리바이 불가');
+  assert.strictEqual(eng.rebuy('q0', 50000).ok, false, '칩이 남아있으면 리바이 불가');
   eng.stop();
   console.log('입장 제한 OK');
 })().catch(e => { console.error(e); process.exit(1); });

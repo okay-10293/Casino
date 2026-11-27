@@ -9,7 +9,7 @@
     ['low', '1–18', 2], ['high', '19–36', 2], ['d1', '1–12', 3], ['d2', '13–24', 3], ['d3', '25–36', 3]
   ];
   var MULT = { red: 2, black: 2, odd: 2, even: 2, low: 2, high: 2, d1: 3, d2: 3, d3: 3 };
-  var CHIPS = [100, 500, 1000, 5000];
+  var CHIPS = [10000, 50000, 100000, 500000];
 
   function colorOf(n) { return n === 0 ? 'green' : (RED.indexOf(n) >= 0 ? 'red' : 'black'); }
   function wins(key, n) {
@@ -48,7 +48,7 @@
     '</div>' +
     '<div class="panel">' +
     '<div class="chip-pick" data-chips>' + CHIPS.map(function (v, i) {
-      return '<button type="button" class="chip c' + v + (i === 0 ? ' sel' : '') + '" data-chip="' + v + '">' + C.fmtShort(v) + '</button>';
+      return '<button type="button" class="chip c' + (v / 100) + (i === 0 ? ' sel' : '') + '" data-chip="' + v + '">' + C.fmtShort(v) + '</button>';
     }).join('') + '</div>' +
     '<div class="bet-line"><span>총 베팅</span><b data-total>0</b></div>' +
     '<div class="actions">' +
@@ -150,7 +150,7 @@
     hist.push(result); renderHist();
     last = bets; bets = {}; stack = [];
     spinning = false; paint();
-    if (C.money() < 100) C.toast('게임머니가 바닥났어. 노동 탭에서 벌거나 위의 리셋을 눌러줘');
+    if (C.money() < CHIPS[0]) C.toast('게임머니가 바닥났어. 노동 탭에서 벌거나 위의 리셋을 눌러줘');
   }
   spinBtn.addEventListener('click', spin);
   document.addEventListener('casino:reset', function () { if (!spinning) { bets = {}; stack = []; paint(); } });

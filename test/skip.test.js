@@ -13,7 +13,6 @@ const skipBoxes = () => [...d.querySelectorAll('.skip input')];
 
   // ---- 슬롯: 연출 중 버튼 눌러 건너뛰기
   tab('slots');
-  click(q('#g-slots [data-add="500"]'));
   const pull = q('#g-slots [data-pull]'), msg = () => q('#g-slots [data-msg]').textContent;
   let t0 = Date.now(); click(pull);
   await sleep(100);
@@ -26,10 +25,11 @@ const skipBoxes = () => [...d.querySelectorAll('.skip input')];
   const box = skipBoxes()[0]; box.checked = true; box.dispatchEvent(new w.Event('change'));
   check('설정이 두 체크박스에 동기화', skipBoxes().every(b => b.checked));
   check('설정이 저장됨', JSON.parse(w.localStorage.getItem('okay-casino-v1')).skip === true);
-  click(q('#g-slots [data-add="500"]')); click(pull); await sleep(40);
+  click(pull); await sleep(40);
   check('슬롯: 건너뛰기 켜면 바로 결과', !/돌아간다/.test(msg()) && pull.textContent === '스핀' && !pull.disabled);
 
-  // ---- 룰렛: 항상 건너뛰기
+  // ---- 룰렛: 항상 건너뛰기 (슬롯이 100만 고정 베팅이라 돈을 채워둔다)
+  w.Casino.add(5000000);
   tab('roulette');
   click(q('#g-roulette [data-key=red]'));
   const spin = q('#g-roulette [data-spin]'), rmsg = () => q('#g-roulette [data-msg]').textContent;

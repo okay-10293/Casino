@@ -332,14 +332,14 @@
       var maxTo = mine.bet + mine.stack, minTo = Math.min(snap.currentBet + snap.minRaise, maxTo);
       var canRaise = maxTo > snap.currentBet;
       var sized = function (f) {
-        var to = snap.currentBet + Math.round((snap.pot + (snap.currentBet - mine.bet)) * f / 10) * 10;
+        var to = snap.currentBet + Math.round((snap.pot + (snap.currentBet - mine.bet)) * f / 1000) * 1000;
         return Math.max(minTo, Math.min(maxTo, to));
       };
       ctrlEl.innerHTML =
         '<div class="actions"><button type="button" data-a="fold">폴드</button>' +
         '<button type="button" class="primary" data-a="call">' + (toCall === 0 ? '넘기기<small>체크</small>' : '맞추기 ' + C.fmt(toCall) + '<small>콜</small>') + '</button>' +
         (canRaise ? '<button type="button" class="primary" data-a="raise">' + (snap.currentBet === 0 ? '베팅하기' : '올리기<small>레이즈</small>') + ' <b data-rv>' + C.fmt(minTo) + '</b></button>' : '') + '</div>' +
-        (canRaise ? '<div class="raise-row"><input type="range" id="on-raise" min="' + minTo + '" max="' + maxTo + '" step="10" value="' + minTo + '">' +
+        (canRaise ? '<div class="raise-row"><input type="range" id="on-raise" min="' + minTo + '" max="' + maxTo + '" step="1000" value="' + minTo + '">' +
           '<div class="presets"><button type="button" data-set="' + minTo + '">최소</button><button type="button" data-set="' + sized(0.5) + '">1/2 팟</button>' +
           '<button type="button" data-set="' + sized(1) + '">팟</button><button type="button" data-set="' + maxTo + '">올인</button></div></div>' : '');
       var range = ctrlEl.querySelector('#on-raise'), rv = ctrlEl.querySelector('[data-rv]');

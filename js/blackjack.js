@@ -29,7 +29,7 @@
   var dealerEl = q('[data-dealer]'), playerEl = q('[data-player]');
   var dsEl = q('[data-ds]'), psEl = q('[data-ps]'), msgEl = q('[data-msg]');
   var btn = { deal: q('[data-deal]'), hit: q('[data-hit]'), stand: q('[data-stand]'), dbl: q('[data-double]') };
-  var bar = C.betBar(q('[data-bar]'), { min: 100 });
+  var bar = C.betBar(q('[data-bar]'), { min: 10000 });
 
   var deck = [], player = [], dealer = [], bet = 0, phase = 'bet';
 
