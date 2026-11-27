@@ -90,10 +90,16 @@
     if (p.bet && !p.folded) note.textContent = (note.textContent ? note.textContent + ' · ' : '') + '베팅 ' + C.fmt(p.bet);
     if (p.result) { note.textContent = p.result; note.classList.add('res'); }
     d.appendChild(note);
+    if (!p.bot && myCombo) {
+      var cb = document.createElement('div'); cb.className = 'pcombo'; cb.textContent = '내 족보: ' + myCombo; d.appendChild(cb);
+    }
     return d;
   }
-  var acting = null;
+  var acting = null, myCombo = '';
   function render() {
+    var me0 = seats[0];
+    myCombo = (me0 && me0.hand && me0.hand.length === 2 && !me0.folded) ? C.handName(me0.hand.concat(board)) : '';
+    C.markRank(myCombo);
     topEl.innerHTML = ''; meEl.innerHTML = '';
     seats.forEach(function (p, i) { (i === 0 ? meEl : topEl).appendChild(seatEl(p, i)); });
     boardEl.innerHTML = '';

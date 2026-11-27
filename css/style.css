@@ -209,3 +209,7 @@ select, .join-row input { background: var(--bg); color: var(--fg); border: 1px s
   .rank-table .hand.small .card .cr { font-size: 13px; }
   .rank-table .hand.small .card .cs { font-size: 13px; }
 }
+
+.pcombo { color: var(--brass); font-weight: 700; font-size: 13px; margin-top: 2px; }
+.rank-table tr.cur { background: #d4a64a26; }
+.rank-table tr.cur .rn b { color: var(--brass); }

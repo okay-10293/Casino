@@ -201,6 +201,21 @@
     return d;
   }
 
+  // 내 카드 + 공용 카드로 지금 만들어진 족보 이름 (카드가 2장이면 페어 여부만)
+  function handName(cards) {
+    var P = window.Poker;
+    if (!P || !cards || cards.length < 2) return '';
+    if (cards.length < 5) return cards[0].r === cards[1].r ? '원페어' : '하이카드';
+    return P.name(P.best(cards));
+  }
+  // 족보 표에서 지금 내 족보 줄을 강조
+  function markRank(name) {
+    document.querySelectorAll('.rank-table tr').forEach(function (tr) {
+      var b = tr.querySelector('.rn b');
+      tr.classList.toggle('cur', !!name && !!b && b.textContent === name);
+    });
+  }
+
   /* ---------- 시작/탭 ---------- */
   var games = ['blackjack', 'holdem', 'roulette', 'slots', 'online', 'work', 'ranking'];
   function show(tab) {
@@ -253,7 +268,7 @@
       emit();
     },
     setTable: function (n) { S.table = Math.max(0, Math.floor(n)); save(); },
-    maxBuyin: maxBuyin, minBuyin: function () { return MIN_BUYIN; }, buyinPicker: buyinPicker, handTable: handTable,
+    maxBuyin: maxBuyin, minBuyin: function () { return MIN_BUYIN; }, buyinPicker: buyinPicker, handTable: handTable, handName: handName, markRank: markRank,
     playerName: function () { return S.name; },
     playerId: function () { return S.id; },
     onChange: function (f) { listeners.push(f); },

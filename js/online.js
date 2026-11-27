@@ -274,11 +274,18 @@
     if (s.result) { note.textContent = s.result; note.classList.add('res'); }
     if (snap.toAct === s.id) { var tm = document.createElement('span'); tm.className = 'timer'; tm.setAttribute('data-timer', ''); note.appendChild(document.createTextNode(' ')); note.appendChild(tm); }
     d.appendChild(note);
+    if (isMe && myCombo) {
+      var cb = document.createElement('div'); cb.className = 'pcombo'; cb.textContent = '내 족보: ' + myCombo; d.appendChild(cb);
+    }
     return d;
   }
 
+  var myCombo = '';
   function render() {
     if (!snap || tableEl.hidden) return;
+    var ms = snap.seats.filter(function (x) { return x.id === me.id; })[0];
+    myCombo = (ms && ms.inHand && !ms.folded && myHand.length === 2 && myHandNo === snap.handNo) ? C.handName(myHand.concat(snap.board)) : '';
+    C.markRank(myCombo);
     topEl.innerHTML = ''; meEl.innerHTML = '';
     var mine = null;
     snap.seats.forEach(function (s) {
