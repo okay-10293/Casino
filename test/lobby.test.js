@@ -57,6 +57,14 @@ const rooms = d => [...d.querySelectorAll('#g-online [data-rooms] .room')];
   check('코드 입장도 됨', await until(() => !G.querySelector('#g-online [data-table]').hidden));
   check('기본 제목은 "방장의 방"', await until(() => rooms(V).length === 1 && rooms(V)[0].querySelector('b').textContent === '방장의 방'));
 
+  // 블랙잭 방은 게임 종류가 같이 보인다
+  const B = await page('딜러방장');
+  B.querySelector('#g-online #on-game').value = 'blackjack';
+  B.querySelector('#g-online [data-title]').value = '블랙잭방';
+  B.querySelector('#g-online [data-create]').click();
+  check('블랙잭 방도 목록에 게임 종류와 함께 뜸', await until(() => rooms(V).some(r => /블랙잭방/.test(r.textContent) && /· 블랙잭 ·/.test(r.textContent))));
+  check('홀덤 방은 홀덤으로 표시', rooms(V).some(r => /방장의 방/.test(r.textContent) && /· 홀덤 ·/.test(r.textContent)));
+
   check('페이지 오류 없음', !errs.length); if (errs.length) console.log(errs);
   process.exit(fails ? 1 : 0);
 })();

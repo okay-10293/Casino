@@ -13,6 +13,7 @@ const srv = http.createServer((req, res) => {
   const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 420, height: 900 } });
   const errs = []; pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/fonts|ERR_/.test(m.text())) errs.push(m.text()); });
   await pg.goto(url);
+  await pg.click('.modal [data-close]');          // 새 버전이면 패치노트가 처음 한 번 자동으로 뜬다
   const bal = async () => Number((await pg.textContent('#balance')).replace(/,/g, ''));
   console.log('start', await bal());
 

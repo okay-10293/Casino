@@ -26,6 +26,7 @@ const srv = http.createServer((req, res) => {
     }, i);
     pg.on('pageerror', e => errs.push(names[i] + ': ' + e.message));
     await pg.goto(url + '#online'); await pg.waitForSelector('#g-online [data-create]');
+    await pg.click('.modal [data-close]');
     await pg.fill('#player-name', names[i]); await pg.dispatchEvent('#player-name', 'change');
     pg.total = () => pg.evaluate(() => { const o = JSON.parse(localStorage.getItem('okay-casino-v1')); return o.money + o.table; });
     pages.push(pg);
@@ -75,5 +76,5 @@ const srv = http.createServer((req, res) => {
   console.log('종료 합계', totals, '→ 총합', totals.reduce((a, b) => a + b, 0));
   console.log(errs.length ? 'ERRORS ' + JSON.stringify(errs) : 'no page errors');
   await b.close(); srv.close();
-  process.exit(totals.reduce((a, b) => a + b, 0) === 30000 && !errs.length ? 0 : 1);
+  process.exit(totals.reduce((a, b) => a + b, 0) === 3000000 && !errs.length ? 0 : 1);
 })().catch(e => { console.error(e); process.exit(1); });

@@ -1,0 +1,95 @@
+/* 패치노트: 헤더의 "패치노트" 버튼으로 열고, 새 버전이 나오면 처음 한 번 자동으로 띄운다.
+   새 내용을 쓸 때는 NOTES 맨 위에 항목을 추가하면 된다(id는 날짜/버전, 바뀌면 다시 뜬다). */
+(function () {
+  'use strict';
+  var SEEN_KEY = 'okay-casino-patch-seen';
+
+  var NOTES = [
+    { id: '2026-11-28b', date: '11월 28일 (추가)', title: '온라인 대기실', items: [
+      '\"친구랑 같이\" 탭에 대기실을 추가했습니다. 열린 방 목록에서 입장 버튼만 누르면 코드 없이 바로 들어갈 수 있습니다.',
+      '방을 만들 때 방 제목을 붙일 수 있습니다. 비워 두면 \"이름의 방\"으로 표시됩니다. 목록에는 방장, 게임(홀덤 또는 블랙잭), 코드, 인원, 대기 중 또는 게임 중이 보입니다.',
+      '대기실에 지금 몇 명이 있는지 표시됩니다. 방장이 방을 닫으면 목록에서도 바로 사라집니다.',
+      '코드로 입장하기와 초대 링크도 그대로 쓸 수 있습니다. 대기실 아래에 접어 두었습니다.'
+    ] },
+    { id: '2026-11-28', date: '11월 28일', title: '온라인 블랙잭', items: [
+      '"친구랑 같이" 탭에서 방을 만들 때 텍사스 홀덤과 블랙잭 중에 고를 수 있도록 했습니다. 입장하는 친구는 방 코드만 넣으면 됩니다.',
+      '블랙잭 방은 딜러 한 명과 친구들(최대 6명)이 겨룹니다. 베팅 시간(20초)이 지나면 한 명씩 차례로 카드 받기, 멈추기, 2배로 한 장 중에서 고릅니다.',
+      '규칙은 혼자 하는 블랙잭과 같습니다. 블랙잭 1.5배, 동점은 베팅금 반환, 딜러 유리 확률 보정도 똑같이 적용됩니다.',
+      '블랙잭 방은 바이인이 최소 100만입니다. 판 도중에 나가면 그 판 베팅은 돌려받지 못합니다.',
+      '"친구랑 홀덤" 탭 이름을 "친구랑 같이"로 바꿨습니다.',
+      '패치노트 보기를 추가했습니다.'
+    ] },
+    { id: '2026-11-27c', date: '11월 27일 (밤)', title: '금액 100배, 슬롯 키보드', items: [
+      '모든 금액을 100배로 올렸습니다. 리셋 금액은 100만이며, 예전에 저장된 돈은 자동으로 100배가 됩니다.',
+      '슬롯: 스페이스바로 스핀할 수 있고, 베팅은 100만으로 고정했습니다. 돈이 부족하면 안내가 표시됩니다. 엔터를 두 번 누르면 리셋됩니다.',
+      '더블탭 확대를 막았고, 빠르게 연타하면 눌림이 씹히던 문제를 고쳤습니다.'
+    ] },
+    { id: '2026-11-27b', date: '11월 27일 (오후)', title: '홀덤 편의, 밸런스 조정', items: [
+      '홀덤: 바이인을 직접 입력할 수 있게 했습니다(전 재산의 80%까지). 족보 표를 추가했고, 지금 내 족보를 표시합니다.',
+      '온라인 홀덤: 내 패가 사라지던 문제를 고쳤습니다. 패 메시지가 유실돼도 방장에게 다시 받아옵니다.',
+      '슬롯 배당을 조정했습니다. 체리 두 개 x2, 레몬 세 개 x7이며 환수율은 약 85%입니다.',
+      '블랙잭: 딜러에게 유리한 확률 보정을 적용했습니다. 동점은 그대로 베팅금을 돌려줍니다.'
+    ] },
+    { id: '2026-11-27a', date: '11월 27일 (오전)', title: '노동 탭, 건너뛰기', items: [
+      '노동 탭을 추가했습니다. 돈이 떨어지면 일해서 벌 수 있습니다.',
+      '슬롯과 룰렛에서 스핀 연출을 건너뛸 수 있습니다. 항상 건너뛰기 설정도 저장됩니다.',
+      '리셋 버튼은 두 번 눌러야 적용됩니다.',
+      '캐시 때문에 화면이 비던 문제를 막으려고 파일 주소에 버전을 붙였습니다.'
+    ] },
+    { id: '2026-11-27', date: '11월 27일', title: '오케이 카지노 오픈', items: [
+      '블랙잭, 텍사스 홀덤(봇), 룰렛, 슬롯 네 가지로 시작했습니다.',
+      '온라인 홀덤: 방 코드나 초대 링크로 친구 2~6명이 함께 칠 수 있습니다.',
+      '랭킹 탭에서 잔액 상위 30명을 볼 수 있습니다.',
+      '블랙잭과 홀덤 용어를 쉬운 말로 바꾸고 설명을 넣었습니다.'
+    ] }
+  ];
+
+  var latest = NOTES[0].id;
+  function readSeen() { try { return localStorage.getItem(SEEN_KEY); } catch (e) { return null; } }
+  function writeSeen() { try { localStorage.setItem(SEEN_KEY, latest); } catch (e) {} }
+
+  var btn = document.getElementById('patch-btn');
+  var overlay = null, lastFocus = null;
+
+  function build() {
+    overlay = document.createElement('div');
+    overlay.className = 'modal'; overlay.hidden = true;
+    var box = document.createElement('div');
+    box.className = 'modal-box'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', '패치노트');
+    var head = document.createElement('div'); head.className = 'modal-head';
+    var h = document.createElement('h2'); h.textContent = '패치노트';
+    var close = document.createElement('button'); close.type = 'button'; close.className = 'ghost'; close.textContent = '닫기'; close.setAttribute('data-close', '');
+    head.appendChild(h); head.appendChild(close); box.appendChild(head);
+    var body = document.createElement('div'); body.className = 'modal-body';
+    NOTES.forEach(function (n, i) {
+      var sec = document.createElement('section'); sec.className = 'note';
+      var t = document.createElement('h3'); t.textContent = n.title;
+      if (i === 0) { var tag = document.createElement('span'); tag.className = 'new'; tag.textContent = 'NEW'; t.appendChild(tag); }
+      var d = document.createElement('small'); d.textContent = n.date;
+      var ul = document.createElement('ul');
+      n.items.forEach(function (x) { var li = document.createElement('li'); li.textContent = x; ul.appendChild(li); });
+      sec.appendChild(t); sec.appendChild(d); sec.appendChild(ul); body.appendChild(sec);
+    });
+    box.appendChild(body); overlay.appendChild(box); document.body.appendChild(overlay);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay || e.target.closest('[data-close]')) hide(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && overlay && !overlay.hidden) hide(); });
+  }
+  function show() {
+    if (!overlay) build();
+    lastFocus = document.activeElement;
+    overlay.hidden = false;
+    var c = overlay.querySelector('[data-close]'); if (c) c.focus();
+  }
+  function hide() {
+    if (!overlay) return;
+    overlay.hidden = true; writeSeen(); markSeen();
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function markSeen() { if (btn) btn.classList.toggle('unseen', readSeen() !== latest); }
+
+  if (btn) btn.addEventListener('click', show);
+  markSeen();
+  if (readSeen() !== latest) show();     // 새 버전이면 처음 한 번 자동으로 띄운다
+
+  window.PatchNotes = { show: show, latest: latest, notes: NOTES };
+})();
