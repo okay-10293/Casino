@@ -14,12 +14,16 @@ const CC = () => w.CasinoCoins;
 (async () => {
   await sleep(50);   // 비트코인 실시간 연결 실패 → 시뮬레이션으로 시작하는 걸 먼저 지나간다
   check('코인 탭 보임', !q('#g-coins').hidden && q('#tabs [data-tab=coins]').classList.contains('on'));
-  check('코인 5개 목록(비트코인+가상 4개)', d.querySelectorAll('#g-coins .coin-row').length === 5);
+  const ALL = ['BTC', 'EUN', 'PNY', 'CHK', 'RMN', 'LUN', 'RBT', 'OKC', 'TTL', 'BLT', 'DIA'];
+  check('코인 11개 목록(비트코인+가상 10개)', d.querySelectorAll('#g-coins .coin-row').length === 11);
+  check('은혁코인이 있고 목록 맨 위(비트코인 다음)', [...d.querySelectorAll('#g-coins .coin-row')][1].dataset.coin === 'EUN' && /은혁코인/.test(q('#g-coins [data-coin=EUN]').textContent));
+  const tier = id => CC().priceAt(id, T0);
+  check('가격대가 다양함: 푼돈코인 ' + tier('PNY') + ' ~ 다이아코인 ' + tier('DIA').toLocaleString('ko-KR'), tier('DIA') / tier('PNY') > 10000 && new Set(ALL.slice(1).map(id => String(Math.round(Math.log10(tier(id)))))).size >= 5);
 
   // ---- 가상 코인 시세: 같은 시각이면 항상 같은 값 (그래서 모두에게 같은 가격) ----
   const dom2 = openPage('#coins', []);
   let same = true, pos = true;
-  for (const id of ['OKC', 'LUN', 'CHK', 'TTL']) for (let i = 0; i < 200; i++) {
+  for (const id of ALL.slice(1)) for (let i = 0; i < 200; i++) {
     const t = T0 + i * 977000;
     const a = CC().priceAt(id, t), b = dom2.window.CasinoCoins.priceAt(id, t);
     if (a !== b) same = false; if (!(a >= 1 && Number.isInteger(a))) pos = false;
@@ -84,6 +88,18 @@ const CC = () => w.CasinoCoins;
   check('보유 없이 팔기는 거절', /없어/.test(msg()));
   check('루나코인 보유는 그대로', CC().state('LUN').sats === gotL);
 
+  // ---- 은혁코인 / 푼돈코인(아주 싼 코인) / 다이아코인(아주 비싼 코인) ----
+  CC().setTime(T0); q('#g-coins .seg [data-v=buy]').click();
+  const buyOne = (id, amt) => { pick(id); type(amt); q('#g-coins [data-go]').click(); return CC().state(id); };
+  const eun = buyOne('EUN', 100000), pny = buyOne('PNY', 100000), dia = buyOne('DIA', 100000);
+  check('은혁코인 매수', eun.sats === Math.floor(100000 * (1 - FEE) / CC().priceAt('EUN', T0) * SAT) && eun.sats > 0);
+  check('푼돈코인은 많이(10만 원어치 ≥ 100개), 다이아코인은 조금(< 0.1개)', pny.sats / SAT >= 100 && dia.sats / SAT < 0.1 && dia.sats > 0);
+  check('가격이 달라도 투자원금은 정확히 10만씩', eun.cost === 100000 && pny.cost === 100000 && dia.cost === 100000);
+  q('#g-coins .seg [data-v=sell]').click();
+  for (const id of ['EUN', 'PNY', 'DIA']) { pick(id); q('#g-coins [data-p="100"]').click(); q('#g-coins [data-go]').click(); }
+  check('세 코인 전부 매도 → 보유 0', ['EUN', 'PNY', 'DIA'].every(id => CC().state(id).sats === 0));
+  q('#g-coins .seg [data-v=buy]').click();
+
   // ---- 비트코인 (실시간 시세) ----
   q('#g-coins .seg [data-v=buy]').click(); pick('BTC');
   check('비트코인 배지: 실시간', /실시간/.test(q('#g-coins [data-badge]').textContent));
@@ -97,7 +113,7 @@ const CC = () => w.CasinoCoins;
   q('#g-coins [data-p="100"]').click(); q('#g-coins [data-go]').click();
   check('올인 매수: 잔액 0', bal() === 0);
   q('#reset-btn').click(); q('#reset-btn').click();
-  check('리셋: 게임머니 1,000,000 + 모든 코인 0', bal() === 1000000 && ['BTC', 'OKC', 'LUN', 'CHK', 'TTL'].every(id => CC().state(id).sats === 0));
+  check('리셋: 게임머니 1,000,000 + 모든 코인 0', bal() === 1000000 && ALL.every(id => CC().state(id).sats === 0));
   const saved = JSON.parse(w.localStorage.getItem('okay-casino-coins-v1'));
   check('저장 확인(localStorage)', saved.BTC.sats === 0 && saved.LUN.sats === 0);
 

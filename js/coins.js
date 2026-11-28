@@ -17,10 +17,16 @@
   /* base: 기준 가격(게임머니), vol: 변동폭, ev: 30분마다 급등/급락이 터질 확률, mag: 급변 크기, crash: 급변이 급락일 확률 */
   var COINS = [
     { id: 'BTC', name: '비트코인', icon: '₿', real: true },
-    { id: 'OKC', name: '오케이코인', icon: '🆗', base: 25000, vol: 0.75, ev: 0.03, mag: 0.25, crash: 0.5, desc: '우리 카지노 대표 코인. 적당히 출렁여.' },
-    { id: 'LUN', name: '루나코인', icon: '🌙', base: 3500, vol: 1.0, ev: 0.10, mag: 0.5, crash: 0.6, desc: '크게 오르고 크게 떨어져. 가끔 폭락해.' },
+    { id: 'EUN', name: '은혁코인', icon: '👑', base: 120000, vol: 0.9, ev: 0.07, mag: 0.4, crash: 0.4, desc: '은혁이 이름을 건 코인. 비싸고, 가끔 확 날아가.' },
+    { id: 'PNY', name: '푼돈코인', icon: '🪙', base: 45, vol: 1.3, ev: 0.12, mag: 0.6, crash: 0.5, desc: '한 개에 몇십 원. 많이 사서 한 방을 노려봐.' },
     { id: 'CHK', name: '치킨코인', icon: '🍗', base: 180, vol: 1.2, ev: 0.15, mag: 0.6, crash: 0.5, desc: '값이 싸고 제일 정신없어. 급등락 천국.' },
-    { id: 'TTL', name: '거북코인', icon: '🐢', base: 60000, vol: 0.25, ev: 0, mag: 0, crash: 0, desc: '느리고 얌전해. 큰돈은 안 되지만 덜 무서워.' }
+    { id: 'RMN', name: '라면코인', icon: '🍜', base: 950, vol: 0.6, ev: 0.04, mag: 0.25, crash: 0.5, desc: '서민 코인. 불어 터질 때도 있어.' },
+    { id: 'LUN', name: '루나코인', icon: '🌙', base: 3500, vol: 1.0, ev: 0.10, mag: 0.5, crash: 0.6, desc: '크게 오르고 크게 떨어져. 가끔 폭락해.' },
+    { id: 'RBT', name: '달토끼코인', icon: '🐰', base: 7200, vol: 1.1, ev: 0.10, mag: 0.5, crash: 0.45, desc: '깡충깡충 뛰어. 오를 땐 높이, 내릴 땐 깊이.' },
+    { id: 'OKC', name: '오케이코인', icon: '🆗', base: 25000, vol: 0.75, ev: 0.03, mag: 0.25, crash: 0.5, desc: '우리 카지노 대표 코인. 적당히 출렁여.' },
+    { id: 'TTL', name: '거북코인', icon: '🐢', base: 60000, vol: 0.25, ev: 0, mag: 0, crash: 0, desc: '느리고 얌전해. 큰돈은 안 되지만 덜 무서워.' },
+    { id: 'BLT', name: '번개코인', icon: '⚡', base: 280000, vol: 0.7, ev: 0.08, mag: 0.35, crash: 0.5, desc: '비싼 대신 번쩍 하는 순간에 크게 움직여.' },
+    { id: 'DIA', name: '다이아코인', icon: '💎', base: 2500000, vol: 0.35, ev: 0.02, mag: 0.2, crash: 0.5, desc: '제일 비싸고 묵직해. 한 개가 250만 원쯤.' }
   ];
   var byId = {};
   COINS.forEach(function (c) { byId[c.id] = c; });
