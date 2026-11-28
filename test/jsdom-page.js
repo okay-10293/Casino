@@ -12,13 +12,13 @@ function pageHtml() {
 }
 
 // 새 "브라우저 탭" 하나. 같은 프로세스의 탭끼리는 BroadcastChannel로 방 메시지를 주고받는다.
-function openPage(hash, errs) {
+function openPage(hash, errs, seed) {   // seed: 페이지가 뜨기 전에 localStorage에 미리 넣어 둘 값 { 키: 값 }
   const vc = new VirtualConsole();
   vc.on('jsdomError', e => errs.push(e.detail || e.message));
   return new JSDOM(pageHtml(), {
     runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc,
     url: 'http://localhost/' + (hash || ''),
-    beforeParse(w) { w.BroadcastChannel = BroadcastChannel; }
+    beforeParse(w) { w.BroadcastChannel = BroadcastChannel; Object.keys(seed || {}).forEach(k => w.localStorage.setItem(k, seed[k])); }
   });
 }
 module.exports = { openPage, sleep: ms => new Promise(r => setTimeout(r, ms)) };

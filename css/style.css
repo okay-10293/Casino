@@ -326,3 +326,13 @@ button.ghost { min-height: 40px; }
 .btc-row { display: flex; gap: 8px; }
 .btc-row input { flex: 1; min-width: 0; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font: inherit; min-height: 44px; }
 .btc-row button { flex: none; min-width: 96px; }
+.coin-list { display: flex; flex-direction: column; gap: 6px; }
+.coin-row { display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left; padding: 8px 12px; }
+.coin-row.on { border-color: var(--brass); background: var(--bg); }
+.coin-row .ci { font-size: 22px; text-align: center; }
+.coin-row .cn, .coin-row .cp { display: flex; flex-direction: column; min-width: 0; }
+.coin-row .cp { text-align: right; }
+.coin-row b { font-variant-numeric: tabular-nums; }
+.coin-row small { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.coin-row .cp small.up { color: var(--win); } .coin-row .cp small.down { color: var(--red); }
+.coin-desc { margin: 0; }
