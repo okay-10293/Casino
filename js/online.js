@@ -9,13 +9,15 @@
 
   root.innerHTML =
     '<div data-lobby class="lobby panel">' +
-    '<h2>온라인 홀덤</h2>' +
-    '<p>친구들이랑 같이 하는 홀덤이야. 2~6명이 칠 수 있어.</p>' +
-    '<ol class="steps"><li><b>방 만들기</b>를 눌러 코드를 받아</li><li>코드나 초대 링크를 친구한테 보내</li><li>친구는 같은 주소로 들어와서 <b>코드를 넣고 입장</b></li></ol>' +
+    '<h2>온라인 홀덤 대기실 <small class="who" data-who></small></h2>' +
+    '<p>친구들이랑 같이 하는 홀덤이야. 2~6명이 칠 수 있어. 열린 방에서 <b>입장</b>을 누르거나, 직접 방을 만들어봐.</p>' +
     '<div class="field"><span>바이인 (전 재산의 80%까지)</span><div data-buyin></div></div>' +
+    '<div class="rooms" data-rooms></div>' +
+    '<div class="field"><span>방 제목 (비워두면 내 이름으로)</span><input class="txt" data-title maxlength="14" placeholder="예: 초보 환영" autocomplete="off"></div>' +
     '<div class="actions"><button type="button" class="primary" data-create>방 만들기</button></div>' +
+    '<details class="code-join"><summary>코드로 입장하기</summary>' +
     '<div class="join-row"><input id="on-code" maxlength="4" placeholder="방 코드 4자리" autocomplete="off" autocapitalize="characters">' +
-    '<button type="button" data-join>입장</button></div>' +
+    '<button type="button" data-join>입장</button></div></details>' +
     '<p class="rule" data-status></p><div data-help></div></div>' +
     '<div data-table hidden>' +
     '<div class="room-bar"><span>방 코드 <b data-code></b></span><button type="button" data-copy class="ghost">초대 링크 복사</button></div>' +
@@ -35,6 +37,7 @@
   var topEl = q('[data-top]'), meEl = q('[data-me]'), boardEl = q('[data-board]'), potEl = q('[data-pot]');
   var msgEl = q('[data-msg]'), ctrlEl = q('[data-ctrl]'), logEl = q('[data-log]');
   var codeInput = q('#on-code');
+  var roomsEl = q('[data-rooms]'), whoEl = q('[data-who]'), titleInput = q('[data-title]'), codeBox = q('.code-join');
 
   if (!sb) {
     statusEl.textContent = '서버 라이브러리를 불러오지 못했어. 새로고침하거나 네트워크를 확인해줘.';
@@ -97,6 +100,76 @@
     channel = null;
   }
 
+  /* ---------- 대기실: 공용 채널의 프레즌스로 열린 방 목록을 공유한다 ----------
+     방장은 자기 방(제목/인원/진행 여부)을 올리고, 대기실에 있는 사람은 목록을 보고 바로 입장한다. */
+  var lobbyCh = null, lobbyUp = false, adKey = '', curTab = '', roomTitle = '';
+
+  async function lobbyOpen() {
+    if (lobbyCh || !sb) return;
+    if (!me) prepareMe();
+    var ch = sb.channel('casino-lobby', { config: { broadcast: { self: false }, presence: { key: me.id } } });
+    lobbyCh = ch;
+    ch.on('presence', { event: 'sync' }, renderRooms);
+    ch.subscribe(function (status) {
+      if (ch !== lobbyCh) return;
+      if (status === 'SUBSCRIBED') { lobbyUp = true; adKey = ''; trackLobby(); renderRooms(); }
+    });
+  }
+  async function lobbyClose() {
+    var ch = lobbyCh; lobbyCh = null; lobbyUp = false; adKey = '';
+    roomsEl.innerHTML = ''; whoEl.textContent = '';
+    if (ch) { try { await sb.removeChannel(ch); } catch (e) {} }
+  }
+  // 내 상태를 올린다. 방장이면 방 정보도 같이. 바뀐 게 없으면 다시 올리지 않는다.
+  function trackLobby() {
+    if (!lobbyCh || !lobbyUp) return;
+    var ad = { name: me.name };
+    if (role === 'host' && snap) {
+      ad.room = code; ad.title = roomTitle; ad.max = 6;
+      ad.n = snap.seats.filter(function (x) { return !x.left; }).length;
+      ad.live = snap.phase === 'waiting' ? 0 : 1;
+    }
+    var k = JSON.stringify(ad);
+    if (k === adKey) return;
+    adKey = k; lobbyCh.track(ad);
+  }
+  function renderRooms() {
+    if (!lobbyCh || role) return;
+    var st = lobbyCh.presenceState(), rooms = [], count = 0;
+    Object.keys(st).forEach(function (k) {
+      count++;
+      var metas = st[k] || [], m = metas[metas.length - 1];
+      if (m && m.room && /^[A-Z0-9]{4}$/.test(String(m.room))) rooms.push(m);
+    });
+    rooms.sort(function (a, b) { return (a.live ? 1 : 0) - (b.live ? 1 : 0) || (Number(b.n) || 0) - (Number(a.n) || 0); });
+    whoEl.textContent = '지금 ' + count + '명';
+    roomsEl.innerHTML = '';
+    if (!rooms.length) {
+      var none = document.createElement('p'); none.className = 'rule';
+      none.textContent = '열린 방이 없어. 방을 만들어서 친구를 불러봐!';
+      roomsEl.appendChild(none); return;
+    }
+    rooms.forEach(function (m) {
+      // 남이 보낸 글자라서 전부 textContent로만 넣는다
+      var n = Math.max(0, Math.min(6, Number(m.n) || 0)), max = Math.max(2, Math.min(6, Number(m.max) || 6));
+      var row = document.createElement('div'); row.className = 'room';
+      var info = document.createElement('div'); info.className = 'rinfo';
+      var t = document.createElement('b'); t.textContent = String(m.title || '').slice(0, 14) || '이름 없는 방';
+      var sub = document.createElement('small');
+      sub.textContent = '방장 ' + String(m.name || '').slice(0, 10) + ' · 코드 ' + m.room + ' · ' + n + '/' + max + '명 · ' + (m.live ? '게임 중' : '대기 중');
+      info.appendChild(t); info.appendChild(sub);
+      var go = document.createElement('button'); go.type = 'button'; go.className = 'primary';
+      go.textContent = n >= max ? '꽉 참' : '입장'; go.disabled = n >= max;
+      go.addEventListener('click', function () { joinRoom(m.room); });
+      row.appendChild(info); row.appendChild(go); roomsEl.appendChild(row);
+    });
+  }
+  document.addEventListener('casino:tab', function (e) {
+    curTab = e.detail;
+    if (curTab === 'online') { if (!role) lobbyOpen(); }
+    else if (role !== 'host') lobbyClose();     // 방장은 다른 탭을 봐도 방 광고를 유지한다
+  });
+
   /* ---------- 방 만들기 / 입장 ---------- */
   function readBuyin() {
     return buyinPick.read();
@@ -113,6 +186,7 @@
     }
     if (result !== 'ok') { busy = false; return setStatus('방을 만들지 못했어. 잠시 뒤 다시 해봐.'); }
     role = 'host';
+    roomTitle = (titleInput.value || '').trim().slice(0, 14) || (me.name + '의 방');
     engine = OnlineEngine.createEngine({
       shuffled: C.Cards.shuffled,
       onState: function (s) { onEngineState(s); },
@@ -121,6 +195,7 @@
       }
     });
     C.add(-buyin); C.setTable(buyin);
+    lobbyOpen();
     engine.addPlayer(me.id, me.name, buyin);
     enterTable(); busy = false;
   }
@@ -152,7 +227,7 @@
     setStatus(''); lobbyEl.hidden = true; tableEl.hidden = false;
     q('[data-code]').textContent = code;
     clearInterval(clock); clock = setInterval(tick, 500);
-    if (role === 'guest') send({ t: 'hello', id: me.id });
+    if (role === 'guest') { lobbyClose(); send({ t: 'hello', id: me.id }); }
     render();
   }
 
@@ -174,6 +249,8 @@
     if (refund !== false) C.toast(stack > 0 ? C.fmt(stack) + ' 칩을 지갑으로 가져왔어' : '방에서 나왔어');
     engine = null; snap = null; myHand = []; myHandNo = 0; ctrlKey = '';
     lobbyEl.hidden = false; tableEl.hidden = true; busy = false; setStatus('');
+    await lobbyClose();                       // 방장이었다면 방 광고도 내린다
+    if (curTab === 'online') lobbyOpen();
   }
 
   function hostGone() {
@@ -242,6 +319,7 @@
     snap = s; localDeadline = Date.now() + (s.turnLeft || 0);
     var mine = s.seats.filter(function (x) { return x.id === me.id; })[0];
     if (mine) C.setTable(mine.stack);
+    trackLobby();
     render();
   }
 
@@ -396,6 +474,6 @@
   // 초대 링크(?room=ABCD)로 들어오면 온라인 탭을 열고 코드를 채운다
   document.addEventListener('casino:init', function () {
     var p = new URLSearchParams(location.search).get('room');
-    if (p) { codeInput.value = p.toUpperCase().slice(0, 4); location.hash = '#online'; setStatus('바이인을 고르고 입장을 눌러줘.'); }
+    if (p) { codeBox.open = true; codeInput.value = p.toUpperCase().slice(0, 4); location.hash = '#online'; setStatus('바이인을 고르고 입장을 눌러줘.'); }
   });
 })();
