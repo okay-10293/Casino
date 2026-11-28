@@ -304,3 +304,25 @@ button.ghost { min-height: 40px; }
   .wallet input { flex: 1; min-width: 0; width: auto; }
   button.ghost { padding: 6px 8px; }
 }
+
+/* 비트코인 */
+.btc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.btc-head h2 { margin: 0; font: 700 22px var(--f-disp); letter-spacing: .06em; }
+.btc-badge { font-size: 12px; color: var(--win); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+.btc-badge.sim { color: var(--brass); }
+.btc-price { display: flex; flex-direction: column; }
+.btc-price b { font: 700 30px/1.1 var(--f-disp); color: var(--brass); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.btc-price small, .btc-hold small { color: var(--muted); font-size: 12px; }
+.btc-change { font-size: 13px; color: var(--muted); min-height: 1.2em; }
+.btc-change.up, .btc-hold .up, .btc-chart .up { color: var(--win); stroke: var(--win); }
+.btc-change.down, .btc-hold .down, .btc-chart .down { color: var(--red); stroke: var(--red); }
+.btc-chart { width: 100%; height: 80px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+.btc-chart polyline { stroke: var(--muted); color: inherit; }
+.btc-hold { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btc-hold div { display: flex; flex-direction: column; min-width: 0; }
+.btc-hold b { font: 700 16px var(--f-disp); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.btc-quick { display: flex; gap: 8px; }
+.btc-quick button { flex: 1; padding: 8px 4px; }
+.btc-row { display: flex; gap: 8px; }
+.btc-row input { flex: 1; min-width: 0; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font: inherit; min-height: 44px; }
+.btc-row button { flex: none; min-width: 96px; }

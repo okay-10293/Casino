@@ -10,6 +10,7 @@
 - 룰렛: 유러피안(0 하나), 숫자/색/홀짝/더즌 베팅
 - 슬롯: 릴 3개, 환수율 약 85%, 베팅 100만 고정. 키보드: **스페이스 = 스핀**, **엔터 두 번 = 리셋**. 돈이 100만보다 적으면 "돈이 부족해요"
 - 룰렛·슬롯은 도는 중에 버튼(건너뛰기)을 누르거나, "스핀 연출 건너뛰기"를 켜 두면 결과가 바로 나와 (설정 저장)
+- **비트코인**: 게임머니로 비트코인을 사고파는 모의 투자. 실시간 BTC 시세(Coinbase 공개 시세, 10초마다)에 1달러=1,400 게임머니로 환산, 수수료 0.1%. 연결이 안 되면 시뮬레이션 가격. 보유량은 브라우저(localStorage)에만 저장되고 리셋하면 같이 초기화. 가짜 게임머니라 실제 입출금 없음
 - **노동**: 게임머니가 바닥나면 여기서 일해서 벌어. 전단지 돌리기(연타), 택배 분류(반응속도), 청소(기다리기). 리셋 버튼(두 번 눌러야 함)은 게임머니를 100만으로 되돌려. 모든 금액은 v2부터 100배 스케일(시작 100만, 블라인드 1,000/2,000).
 - 랭킹: 잔액 상위 30명 (Supabase)
 
@@ -36,6 +37,7 @@ node test/online-blackjack.test.js     # 온라인 블랙잭 엔진 (정산 규�
 node test/online-blackjack-ui.test.js  # 온라인 블랙잭 화면 + 패치노트 (npm i --no-save jsdom)
 # 아래 둘은 jsdom이 필요해: npm i --no-save jsdom
 node test/online-hands.test.js   # 온라인에서 손님도 핸드마다 자기 패가 보이는지
+node test/bitcoin.test.js        # 비트코인 매수/매도/손익/리셋
 node test/work.test.js           # 노동 탭 (약 35초)
 node test/skip.test.js           # 슬롯/룰렛 연출 건너뛰기
 node test/lobby.test.js          # 온라인 대기실(방 목록, 입장, 인원 갱신)
@@ -48,5 +50,6 @@ node test/ui.test.js             # 터치 사용성(선택 버튼, 키보드, �
 - `js/{blackjack,roulette,slots,holdem}.js` 혼자 하는 게임
 - `js/online-engine.js` 온라인 홀덤 엔진, `js/online-blackjack.js` 온라인 블랙잭 엔진, `js/online.js` 온라인 화면/통신
 - `js/patchnotes.js` 패치노트 (새 내용은 `NOTES` 맨 위에 추가하면 처음 한 번 자동으로 뜸)
+- `js/bitcoin.js` 비트코인 모의 투자
 - `js/work.js` 노동 (일해서 게임머니 벌기)
 - `js/config.js` Supabase 공개 URL/anon 키, `js/leaderboard.js` 랭킹

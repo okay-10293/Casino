@@ -250,7 +250,7 @@
   }
 
   /* ---------- 시작/탭 ---------- */
-  var games = ['blackjack', 'holdem', 'roulette', 'slots', 'online', 'work', 'ranking'];
+  var games = ['blackjack', 'holdem', 'roulette', 'slots', 'bitcoin', 'online', 'work', 'ranking'];
   function show(tab) {
     if (games.indexOf(tab) < 0) tab = 'blackjack';
     games.forEach(function (g) { document.getElementById('g-' + g).hidden = g !== tab; });
