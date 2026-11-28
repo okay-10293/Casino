@@ -25,7 +25,7 @@
       return {
         phase: phase, handNo: handNo, board: board.slice(), pot: pot(), currentBet: currentBet, minRaise: minRaise,
         toAct: toAct, deadline: deadline, msg: msg, logs: logs.slice(), dealer: dealerSeat ? dealerSeat.id : null,
-        sb: SB, bb: BB,
+        sb: SB, bb: BB, game: 'holdem',
         seats: seats.map(function (s) {
           return {
             id: s.id, name: s.name, stack: s.stack, bet: s.bet, folded: s.folded, allin: s.allin,

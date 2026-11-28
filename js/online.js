@@ -1,5 +1,5 @@
-/* 온라인 홀덤: Supabase Realtime(브로드캐스트+프레즌스)로 방을 만든다.
-   방장 브라우저가 게임 진행을 맡고(online-engine.js), 다른 사람은 행동만 보내고 상태를 받아 그린다. */
+/* 온라인(친구랑 같이): Supabase Realtime(브로드캐스트+프레즌스)로 방을 만든다. 게임은 홀덤 또는 블랙잭.
+   방장 브라우저가 게임 진행을 맡고(online-engine.js / online-blackjack.js), 다른 사람은 행동만 보내고 상태를 받아 그린다. */
 (function () {
   'use strict';
   var C = Casino;
@@ -9,32 +9,34 @@
 
   root.innerHTML =
     '<div data-lobby class="lobby panel">' +
-    '<h2>온라인 홀덤</h2>' +
-    '<p>친구들이랑 같이 하는 홀덤이야. 2~6명이 칠 수 있어.</p>' +
+    '<h2>친구랑 같이 하기</h2>' +
+    '<p>친구들이랑 같이 하는 방이야. 홀덤이나 블랙잭을 골라서 2~6명이 할 수 있어.</p>' +
     '<ol class="steps"><li><b>방 만들기</b>를 눌러 코드를 받아</li><li>코드나 초대 링크를 친구한테 보내</li><li>친구는 같은 주소로 들어와서 <b>코드를 넣고 입장</b></li></ol>' +
+    '<label class="field">게임 (방을 만들 때만 골라)<select id="on-game"><option value="holdem">텍사스 홀덤</option><option value="blackjack">블랙잭 (딜러 vs 친구들)</option></select></label>' +
     '<div class="field"><span>바이인 (전 재산의 80%까지)</span><div data-buyin></div></div>' +
     '<div class="actions"><button type="button" class="primary" data-create>방 만들기</button></div>' +
     '<div class="join-row"><input id="on-code" maxlength="4" placeholder="방 코드 4자리" autocomplete="off" autocapitalize="characters">' +
     '<button type="button" data-join>입장</button></div>' +
     '<p class="rule" data-status></p><div data-help></div></div>' +
     '<div data-table hidden>' +
-    '<div class="room-bar"><span>방 코드 <b data-code></b></span><button type="button" data-copy class="ghost">초대 링크 복사</button></div>' +
+    '<div class="room-bar"><span><span data-gamename></span> · 방 코드 <b data-code></b></span><button type="button" data-copy class="ghost">초대 링크 복사</button></div>' +
     '<div class="felt poker-felt">' +
     '<div class="seats-top" data-top></div>' +
-    '<div class="board-area"><div class="pot">팟 <b data-pot>0</b></div><div class="board" data-board></div><div class="msg" data-msg></div></div>' +
+    '<div class="board-area"><div class="pot"><span data-potlabel>팟</span> <b data-pot>0</b></div><div class="board" data-board></div><div class="msg" data-msg></div></div>' +
     '<div class="seat-me" data-me></div></div>' +
     '<div class="panel hctrl" data-ctrl></div>' +
     '<ul class="log" data-log></ul><div data-ranks></div></div>';
 
   var q = function (s) { return root.querySelector(s); };
   q('[data-help]').appendChild(C.holdemHelp());
+  q('[data-help]').appendChild(bjHelp());
   q('[data-ranks]').appendChild(C.handTable());
   var buyinPick = C.buyinPicker();
   q('[data-buyin]').appendChild(buyinPick.el);
   var lobbyEl = q('[data-lobby]'), tableEl = q('[data-table]'), statusEl = q('[data-status]');
   var topEl = q('[data-top]'), meEl = q('[data-me]'), boardEl = q('[data-board]'), potEl = q('[data-pot]');
   var msgEl = q('[data-msg]'), ctrlEl = q('[data-ctrl]'), logEl = q('[data-log]');
-  var codeInput = q('#on-code');
+  var codeInput = q('#on-code'), gameSel = q('#on-game');
 
   if (!sb) {
     statusEl.textContent = '서버 라이브러리를 불러오지 못했어. 새로고침하거나 네트워크를 확인해줘.';
@@ -45,7 +47,21 @@
   var channel = null, role = null, code = '', me = null, engine = null;
   var snap = null, myHand = [], myHandNo = 0, localDeadline = 0, hostKey = null, busy = false;
   var sendTimer = null, pendingState = null, ctrlKey = '', clock = null;
+  var roomGame = 'holdem', hostGame = null, bjBet = 0, lastBjBet = 0;
+  var GAME_NAMES = { holdem: '텍사스 홀덤', blackjack: '블랙잭' };
+  function bjMin() { return 100 * C.scale; }      // 혼자 하는 블랙잭과 같은 최소 베팅
 
+  function bjHelp() {
+    var d = document.createElement('details'); d.className = 'help';
+    d.innerHTML = '<summary>블랙잭이 처음이면</summary><ul>' +
+      '<li>다 같이 딜러 한 명이랑 겨뤄. 친구끼리 싸우는 게 아니야.</li>' +
+      '<li>카드 합을 <b>21에 가깝게</b> 만들면 이겨. 21을 넘으면 져.</li>' +
+      '<li>베팅 시간 안에 베팅하면, 한 명씩 차례로 <b>카드 받기 / 멈추기 / 2배로 한 장</b>을 골라.</li>' +
+      '<li>처음 두 장이 21이면 <b>블랙잭</b>(1.5배 보너스). 동점은 베팅금 반환.</li>' +
+      '<li>딜러는 합이 17이 될 때까지 카드를 받아.</li>' +
+      '<li>판 도중에 나가면 그 판 베팅은 돌려받지 못해.</li></ul>';
+    return d;
+  }
   function setStatus(t) { statusEl.textContent = t || ''; }
   function genCode() { var s = ''; for (var i = 0; i < 4; i++) s += ALPHA.charAt(C.rand(ALPHA.length)); return s; }
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -55,7 +71,7 @@
   function hostFromPresence() {
     var st = channel.presenceState(), found = null;
     Object.keys(st).forEach(function (k) {
-      (st[k] || []).forEach(function (m) { if (m && m.host) found = k; });
+      (st[k] || []).forEach(function (m) { if (m && m.host) { found = k; hostGame = m.game === 'blackjack' ? 'blackjack' : 'holdem'; } });
     });
     return found;
   }
@@ -79,7 +95,7 @@
       });
     });
     if (!ok) { await sb.removeChannel(ch); channel = null; return 'error'; }
-    await ch.track({ name: me.name, host: asRole === 'host' });
+    await ch.track({ name: me.name, host: asRole === 'host', game: roomGame });
     for (var i = 0; i < 12; i++) {           // 프레즌스 동기화를 최대 3초 기다림
       await wait(250);
       hostKey = hostFromPresence();
@@ -98,13 +114,17 @@
   }
 
   /* ---------- 방 만들기 / 입장 ---------- */
-  function readBuyin() {
-    return buyinPick.read();
+  function readBuyin(game) {
+    var v = buyinPick.read(); if (!v) return 0;
+    if (game === 'blackjack' && v < bjMin()) { C.toast('블랙잭 방은 바이인이 최소 ' + C.fmt(bjMin()) + '이야'); return 0; }
+    return v;
   }
   function prepareMe() { me = { id: C.playerId(), name: C.playerName() }; }
 
   async function createRoom() {
-    if (busy) return; var buyin = readBuyin(); if (!buyin) return;
+    if (busy) return;
+    roomGame = gameSel.value === 'blackjack' ? 'blackjack' : 'holdem';
+    var buyin = readBuyin(roomGame); if (!buyin) return;
     busy = true; setStatus('방을 만드는 중…'); prepareMe();
     var result = 'error';
     for (var i = 0; i < 4; i++) {
@@ -113,8 +133,9 @@
     }
     if (result !== 'ok') { busy = false; return setStatus('방을 만들지 못했어. 잠시 뒤 다시 해봐.'); }
     role = 'host';
-    engine = OnlineEngine.createEngine({
+    engine = (roomGame === 'blackjack' ? OnlineBlackjack : OnlineEngine).createEngine({
       shuffled: C.Cards.shuffled,
+      minBet: bjMin(),
       onState: function (s) { onEngineState(s); },
       onPrivate: function (id, cards, no) {
         if (id === me.id) { myHand = cards; myHandNo = no; render(); } else send({ t: 'hand', to: id, cards: cards, no: no });
@@ -126,14 +147,18 @@
   }
 
   async function joinRoom(roomCode) {
-    if (busy) return; var buyin = readBuyin(); if (!buyin) return;
+    if (busy) return; var buyin = buyinPick.read(); if (!buyin) return;
     roomCode = (roomCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (roomCode.length !== 4) return setStatus('방 코드는 4자리야.');
     busy = true; setStatus('방을 찾는 중…'); prepareMe(); code = roomCode;
     var result = await connect(code, 'guest');
     if (result === 'nohost') { busy = false; return setStatus('그 코드의 방이 없어.'); }
     if (result !== 'ok') { busy = false; return setStatus('연결하지 못했어. 잠시 뒤 다시 해봐.'); }
-    role = 'guest';
+    role = 'guest'; roomGame = hostGame || 'holdem';
+    if (roomGame === 'blackjack' && buyin < bjMin()) {
+      await closeChannel(); role = null; busy = false;
+      return setStatus('이 방은 블랙잭이야. 바이인이 최소 ' + C.fmt(bjMin()) + '이어야 해.');
+    }
     var ack = await new Promise(function (resolve) {
       var t = setTimeout(function () { joinWaiter = null; resolve(null); }, 6000);
       joinWaiter = function (a) { clearTimeout(t); joinWaiter = null; resolve(a); };
@@ -151,6 +176,10 @@
   function enterTable() {
     setStatus(''); lobbyEl.hidden = true; tableEl.hidden = false;
     q('[data-code]').textContent = code;
+    q('[data-gamename]').textContent = GAME_NAMES[roomGame];
+    q('[data-potlabel]').textContent = roomGame === 'blackjack' ? '딜러' : '팟';
+    q('[data-ranks]').hidden = roomGame === 'blackjack';
+    bjBet = 0; ctrlKey = '';
     clearInterval(clock); clock = setInterval(tick, 500);
     if (role === 'guest') send({ t: 'hello', id: me.id });
     render();
@@ -191,11 +220,11 @@
       } else if (m.t === 'hello') {
         pushState(true);
         var seat = engine._seats().filter(function (s) { return s.id === m.id; })[0];
-        if (seat && seat.hand.length && !seat.folded) send({ t: 'hand', to: m.id, cards: seat.hand, no: engine.snapshot().handNo });
+        if (roomGame === 'holdem' && seat && seat.hand.length && !seat.folded) send({ t: 'hand', to: m.id, cards: seat.hand, no: engine.snapshot().handNo });
       } else if (m.t === 'needhand') {
         // 손님이 이번 핸드 패를 못 받았다고 다시 요청 (브로드캐스트는 유실될 수 있다)
         var ns = engine._seats().filter(function (s) { return s.id === m.id; })[0];
-        if (ns && ns.hand.length && !ns.folded) send({ t: 'hand', to: m.id, cards: ns.hand, no: engine.snapshot().handNo });
+        if (roomGame === 'holdem' && ns && ns.hand.length && !ns.folded) send({ t: 'hand', to: m.id, cards: ns.hand, no: engine.snapshot().handNo });
       } else if (m.t === 'action') {
         engine.action(String(m.id), m.a);
       } else if (m.t === 'leave') {
@@ -226,14 +255,14 @@
   /* 상태 전파 (너무 자주 보내지 않게 합친다) */
   function onEngineState(s) {
     if (!role || !channel) return;
-    s.turnLeft = s.toAct ? Math.max(0, s.deadline - Date.now()) : 0;
+    s.turnLeft = (s.toAct || s.phase === 'betting') ? Math.max(0, s.deadline - Date.now()) : 0;
     applyState(s);
     pendingState = s;
     if (!sendTimer) sendTimer = setTimeout(function () { sendTimer = null; if (pendingState) { send({ t: 'state', s: pendingState }); pendingState = null; } }, 70);
   }
   function pushState(force) {
     if (!engine) return;
-    var s = engine.snapshot(); s.turnLeft = s.toAct ? Math.max(0, s.deadline - Date.now()) : 0;
+    var s = engine.snapshot(); s.turnLeft = (s.toAct || s.phase === 'betting') ? Math.max(0, s.deadline - Date.now()) : 0;
     pendingState = s;
     if (force) { clearTimeout(sendTimer); sendTimer = null; send({ t: 'state', s: s }); pendingState = null; }
   }
@@ -283,6 +312,7 @@
   var myCombo = '';
   function render() {
     if (!snap || tableEl.hidden) return;
+    if (snap.game === 'blackjack') return renderBJ();
     var ms = snap.seats.filter(function (x) { return x.id === me.id; })[0];
     myCombo = (ms && ms.inHand && !ms.folded && myHand.length === 2 && myHandNo === snap.handNo) ? C.handName(myHand.concat(snap.board)) : '';
     C.markRank(myCombo);
@@ -303,10 +333,122 @@
     tick();
   }
 
+  /* ---------- 블랙잭 화면 ---------- */
+  var STATE_TEXT = { bj: '블랙잭!', bust: '21 넘음', stood: '멈춤', bet: '베팅 완료' };
+  function bjSeatEl(s, isMe) {
+    var d = document.createElement('div');
+    d.className = 'pseat' + (snap.toAct === s.id ? ' acting' : '') + (isMe ? ' me' : '') + (s.left ? ' folded' : '');
+    var head = document.createElement('div'); head.className = 'ph';
+    var nm = document.createElement('span'); nm.className = 'pn'; nm.textContent = s.name + (isMe ? ' (나)' : '');
+    head.appendChild(nm); d.appendChild(head);
+    var st = document.createElement('div'); st.className = 'pstack'; st.textContent = C.fmt(s.stack); d.appendChild(st);
+    var cards = document.createElement('div'); cards.className = 'hand small';
+    s.cards.forEach(function (c) { cards.appendChild(C.Cards.el(c)); });
+    d.appendChild(cards);
+    var note = document.createElement('div'); note.className = 'pnote';
+    var t = [];
+    if (s.cards.length) t.push('합 ' + s.total);
+    if (s.bet) t.push('베팅 ' + C.fmt(s.bet));
+    if (s.left) t.push('나감'); else if (STATE_TEXT[s.state] && !(s.state === 'bet' && s.cards.length)) t.push(STATE_TEXT[s.state]);
+    note.textContent = t.join(' · ');
+    if (s.result && snap.phase === 'between') { note.textContent = s.result; note.classList.add('res'); }
+    if (snap.toAct === s.id) { var tm = document.createElement('span'); tm.className = 'timer'; tm.setAttribute('data-timer', ''); note.appendChild(document.createTextNode(' ')); note.appendChild(tm); }
+    d.appendChild(note);
+    return d;
+  }
+  function renderBJ() {
+    topEl.innerHTML = ''; meEl.innerHTML = '';
+    var mine = null;
+    snap.seats.forEach(function (s) {
+      if (s.id === me.id) { mine = s; meEl.appendChild(bjSeatEl(s, true)); } else topEl.appendChild(bjSeatEl(s, false));
+    });
+    boardEl.innerHTML = '';
+    if (snap.dealer.cards.length) snap.dealer.cards.forEach(function (c) { boardEl.appendChild(C.Cards.el(c, !c)); });
+    else for (var i = 0; i < 2; i++) boardEl.appendChild(Object.assign(document.createElement('div'), { className: 'card slot' }));
+    potEl.textContent = snap.dealer.cards.length ? snap.dealer.total : '-';
+    msgEl.textContent = snap.msg;
+    if (snap.phase === 'betting') {
+      var tm = document.createElement('span'); tm.className = 'timer'; tm.setAttribute('data-timer', '');
+      msgEl.appendChild(document.createTextNode(' ')); msgEl.appendChild(tm);
+    }
+    logEl.innerHTML = '';
+    snap.logs.slice().reverse().forEach(function (t) { var li = document.createElement('li'); li.textContent = t; logEl.appendChild(li); });
+    renderBJControls(mine);
+    tick();
+  }
+  function renderBJControls(mine) {
+    if (!mine) { ctrlEl.innerHTML = ''; return; }
+    var key = [snap.round, snap.phase, snap.toAct, mine.stack, mine.bet, mine.state, mine.cards.length].join('|');
+    if (key === ctrlKey) return;
+    ctrlKey = key; ctrlEl.innerHTML = ''; ctrlEl.onclick = null;
+    var minBet = snap.minBet;
+    var inPlay = mine.inRound && (snap.phase === 'playing' || snap.phase === 'dealer');
+
+    if (snap.phase === 'betting' && mine.state === 'idle') {
+      bjBet = Math.max(minBet, Math.min(lastBjBet || minBet, mine.stack));
+      ctrlEl.innerHTML =
+        '<div class="bet-line"><span>이번 판 베팅</span><b data-bv>' + C.fmt(bjBet) + '</b></div>' +
+        '<div class="chips">' + [[1, 100], [5, 500], [10, 1000], [50, 5000]].map(function (m) {
+          return '<button type="button" class="chip c' + m[1] + '" data-add="' + (m[0] * minBet) + '">+' + C.fmtShort(m[0] * minBet) + '</button>';
+        }).join('') + '</div>' +
+        '<div class="actions"><button type="button" class="primary" data-ok>베팅하기</button>' +
+        '<button type="button" data-clr>최소로</button><button type="button" data-all>올인</button></div>';
+      var bv = ctrlEl.querySelector('[data-bv]');
+      var step = Math.max(1, Math.floor(minBet / 10));
+      var setBet = function (v) { bjBet = Math.max(minBet, Math.min(Math.floor(v / step) * step, mine.stack)); bv.textContent = C.fmt(bjBet); };
+      ctrlEl.onclick = function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        if (b.dataset.add) setBet(bjBet + Number(b.dataset.add));
+        else if (b.hasAttribute('data-clr')) setBet(minBet);
+        else if (b.hasAttribute('data-all')) setBet(mine.stack);
+        else if (b.hasAttribute('data-ok')) { lastBjBet = bjBet; act({ type: 'bet', amount: bjBet }); }
+      };
+      return;
+    }
+    if (snap.toAct === me.id) {
+      var canDouble = mine.cards.length === 2 && mine.stack >= mine.bet;
+      ctrlEl.innerHTML = '<div class="actions">' +
+        '<button type="button" class="primary" data-a="hit">카드 받기<small>히트</small></button>' +
+        '<button type="button" data-a="stand">멈추기<small>스탠드</small></button>' +
+        '<button type="button" data-a="double"' + (canDouble ? '' : ' disabled') + '>2배로 한 장<small>더블</small></button></div>';
+      ctrlEl.onclick = function (e) {
+        var b = e.target.closest('button'); if (!b || !b.dataset.a) return;
+        act({ type: b.dataset.a });
+      };
+      return;
+    }
+    var busted = mine.stack < minBet && !inPlay;
+    var info = document.createElement('p'); info.className = 'rule';
+    info.textContent = busted ? '칩이 부족해. 리바이하면 다음 판부터 다시 참여해.'
+      : snap.phase === 'betting' ? (mine.state === 'bet' ? '다른 사람 베팅을 기다리는 중이야.' : '이번 판은 쉬어.')
+      : snap.phase === 'waiting' ? '친구를 기다리는 중이야. 코드 ' + code + ' 를 알려줘.'
+      : snap.phase === 'between' ? '곧 다음 판 베팅이 시작돼.'
+      : (snap.toAct ? '다른 사람 차례야.' : '진행 중…');
+    ctrlEl.appendChild(info);
+    var row = document.createElement('div'); row.className = 'actions';
+    if (busted) {
+      [0.2, 0.5, 0.8].map(function (f) { return Math.floor(C.money() * f); })
+        .filter(function (v, i, a) { return v >= minBet && v >= C.minBuyin() && a.indexOf(v) === i; }).forEach(function (v) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'primary';
+        b.textContent = C.fmt(v) + ' 리바이'; b.disabled = v > C.maxBuyin();
+        b.addEventListener('click', function () {
+          if (role === 'host') { var r = engine.rebuy(me.id, v); if (r.ok) C.add(-v); else C.toast(r.reason); }
+          else send({ t: 'rebuy', id: me.id, amount: v });
+        });
+        row.appendChild(b);
+      });
+    }
+    var lv = document.createElement('button'); lv.type = 'button';
+    lv.textContent = role === 'host' ? '방 닫고 나가기' : '나가기 (' + C.fmt(mine.stack) + ')';
+    lv.addEventListener('click', function () { leaveRoom(true); });
+    row.appendChild(lv);
+    ctrlEl.appendChild(row);
+  }
+
   var lastNeedHand = 0;
   function tick() {
     var el = root.querySelector('[data-timer]');
-    if (el && snap && snap.toAct) el.textContent = Math.max(0, Math.ceil((localDeadline - Date.now()) / 1000)) + '초';
+    if (el && snap && (snap.toAct || snap.phase === 'betting')) el.textContent = Math.max(0, Math.ceil((localDeadline - Date.now()) / 1000)) + '초';
     // 손님: 이번 핸드 내 패가 아직 없으면 방장에게 다시 달라고 한다 (1초마다)
     if (role === 'guest' && snap && snap.phase === 'hand' && Date.now() - lastNeedHand > 1000) {
       var me2 = snap.seats.filter(function (x) { return x.id === me.id; })[0];

@@ -271,6 +271,7 @@
   window.Casino = {
     start: start,
     reset: reset,
+    scale: SCALE,
     money: function () { return S.money; },
     add: function (n) {
       S.money = Math.max(0, S.money + Math.floor(n));
