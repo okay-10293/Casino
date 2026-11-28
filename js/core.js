@@ -117,6 +117,27 @@
     return label;
   }
 
+  /* ---------- 선택 버튼 (사파리 기본 select 대신). el.value 로 읽고 쓰고, 바뀌면 change 이벤트 ---------- */
+  function segmented(opts, initial) {
+    var el = document.createElement('div'); el.className = 'seg'; el.setAttribute('role', 'radiogroup');
+    var val = initial || opts[0].value, btns = [];
+    function set(v, fire) {
+      if (!opts.some(function (o) { return o.value === v; })) return;
+      var changed = v !== val; val = v;
+      btns.forEach(function (b) { var on = b.dataset.v === val; b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+      if (changed && fire) el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    opts.forEach(function (o) {
+      var b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio');
+      b.dataset.v = o.value; b.textContent = o.label;
+      b.addEventListener('click', function () { set(o.value, true); });
+      btns.push(b); el.appendChild(b);
+    });
+    Object.defineProperty(el, 'value', { get: function () { return val; }, set: function (v) { set(String(v), false); } });
+    set(val, false);
+    return el;
+  }
+
   /* ---------- 토스트 ---------- */
   var toastTimer;
   function toast(msg) {
@@ -135,6 +156,7 @@
     var row = document.createElement('div'); row.className = 'buyin-row';
     var input = document.createElement('input');
     input.type = 'number'; input.inputMode = 'numeric'; input.min = MIN_BUYIN; input.step = 10 * SCALE;
+    input.setAttribute('enterkeyhint', 'done');
     input.setAttribute('aria-label', '바이인 금액');
     var maxBtn = document.createElement('button'); maxBtn.type = 'button'; maxBtn.className = 'ghost'; maxBtn.textContent = '최대';
     var hint = document.createElement('small'); hint.className = 'rule';
@@ -235,6 +257,8 @@
     document.querySelectorAll('#tabs button').forEach(function (b) {
       b.classList.toggle('on', b.dataset.tab === tab);
     });
+    var bar = document.getElementById('tabs'), cur = bar && bar.querySelector('button.on');
+    if (cur && bar.scrollTo) bar.scrollTo({ left: Math.max(0, cur.offsetLeft - (bar.clientWidth - cur.offsetWidth) / 2), behavior: 'smooth' });  // 고른 탭이 가려지지 않게
     if (location.hash !== '#' + tab) history.replaceState(null, '', '#' + tab);
     document.dispatchEvent(new CustomEvent('casino:tab', { detail: tab }));
   }
@@ -284,7 +308,7 @@
     playerId: function () { return S.id; },
     onChange: function (f) { listeners.push(f); },
     rand: rand, sleep: sleep, fmt: fmt, fmtShort: fmtShort, toast: toast,
-    betBar: betBar, skipBox: skipBox, skipMotion: function () { return S.skip; },
+    betBar: betBar, skipBox: skipBox, segmented: segmented, skipMotion: function () { return S.skip; },
     holdemHelp: function () {
       var d = document.createElement('details'); d.className = 'help';
       d.innerHTML = '<summary>홀덤이 처음이면</summary><ul>' +

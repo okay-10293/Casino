@@ -39,6 +39,7 @@ node test/online-hands.test.js   # 온라인에서 손님도 핸드마다 자기
 node test/work.test.js           # 노동 탭 (약 35초)
 node test/skip.test.js           # 슬롯/룰렛 연출 건너뛰기
 node test/lobby.test.js          # 온라인 대기실(방 목록, 입장, 인원 갱신)
+node test/ui.test.js             # 터치 사용성(선택 버튼, 키보드, 홈 화면 설정, 터치 hover)
 ```
 
 ## 구조

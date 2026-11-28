@@ -13,11 +13,11 @@
     '<p>친구들이랑 같이 하는 방이야. 홀덤이나 블랙잭을 2~6명이 할 수 있어. 열린 방에서 <b>입장</b>을 누르거나, 게임을 골라 직접 방을 만들어봐.</p>' +
     '<div class="field"><span>바이인 (전 재산의 80%까지)</span><div data-buyin></div></div>' +
     '<div class="rooms" data-rooms></div>' +
-    '<label class="field">만들 방의 게임<select id="on-game"><option value="holdem">텍사스 홀덤</option><option value="blackjack">블랙잭 (딜러 vs 친구들)</option></select></label>' +
-    '<div class="field"><span>방 제목 (비워두면 내 이름으로)</span><input class="txt" data-title maxlength="14" placeholder="예: 초보 환영" autocomplete="off"></div>' +
+    '<div class="field"><span>만들 방의 게임</span><div data-game-slot></div></div>' +
+    '<div class="field"><span>방 제목 (비워두면 내 이름으로)</span><input class="txt" data-title maxlength="14" placeholder="예: 초보 환영" autocomplete="off" autocorrect="off" enterkeyhint="done"></div>' +
     '<div class="actions"><button type="button" class="primary" data-create>방 만들기</button></div>' +
     '<details class="code-join"><summary>코드로 입장하기</summary>' +
-    '<div class="join-row"><input id="on-code" maxlength="4" placeholder="방 코드 4자리" autocomplete="off" autocapitalize="characters">' +
+    '<div class="join-row"><input id="on-code" maxlength="4" placeholder="방 코드 4자리" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go">' +
     '<button type="button" data-join>입장</button></div></details>' +
     '<p class="rule" data-status></p><div data-help></div></div>' +
     '<div data-table hidden>' +
@@ -29,6 +29,9 @@
     '<div class="panel hctrl" data-ctrl></div>' +
     '<ul class="log" data-log></ul><div data-ranks></div></div>';
 
+  var gameSeg = C.segmented([{ value: 'holdem', label: '텍사스 홀덤' }, { value: 'blackjack', label: '블랙잭' }], 'holdem');
+  gameSeg.id = 'on-game';
+  root.querySelector('[data-game-slot]').appendChild(gameSeg);
   var q = function (s) { return root.querySelector(s); };
   q('[data-help]').appendChild(C.holdemHelp());
   q('[data-help]').appendChild(bjHelp());
@@ -172,7 +175,11 @@
       var info = document.createElement('div'); info.className = 'rinfo';
       var t = document.createElement('b'); t.textContent = String(m.title || '').slice(0, 14) || '이름 없는 방';
       var sub = document.createElement('small');
-      sub.textContent = '방장 ' + String(m.name || '').slice(0, 10) + ' · ' + (m.game === 'blackjack' ? '블랙잭' : '홀덤') + ' · 코드 ' + m.room + ' · ' + n + '/' + max + '명 · ' + (m.live ? '게임 중' : '대기 중');
+      ['방장 ' + String(m.name || '').slice(0, 10), m.game === 'blackjack' ? '블랙잭' : '홀덤', '코드 ' + m.room, n + '/' + max + '명', m.live ? '게임 중' : '대기 중']
+        .forEach(function (part, i) {                      // 조각 단위로만 줄바꿈 ("1/6\n명" 방지)
+          if (i) sub.appendChild(document.createTextNode(' · '));
+          var sp = document.createElement('span'); sp.textContent = part; sub.appendChild(sp);
+        });
       info.appendChild(t); info.appendChild(sub);
       var go = document.createElement('button'); go.type = 'button'; go.className = 'primary';
       go.textContent = n >= max ? '꽉 참' : '입장'; go.disabled = n >= max;
